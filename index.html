@@ -1352,6 +1352,7 @@ async function resolverSite(){
       if(n.includes('adhesivos_list')||n.includes('adhesivo'))listIdMaquinas=l.id;
       else if(n.includes('cliente'))listIdClientes=l.id;
       else if(n.includes('cotizaciones_adh')||n.includes('cotizacion_adh')||n.includes('cotizaciones_adhesivos')||n.includes('cotizaciones adh')||(n.includes('cotizaci')&&n.includes('adh')))listIdCotizaciones=l.id;
+      else if(n==='cotizaciones'&&!listIdCotizaciones)listIdCotizaciones=l.id;
       else if(n.includes('liquidaci'))listIdLiquidaciones=l.id;
     });
   }catch(e){showToast('Error conectando SharePoint: '+e.message,'error');}
