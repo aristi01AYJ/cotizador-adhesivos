@@ -737,6 +737,37 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
     </div>
   </div>
 </div>
+
+<!-- MODAL LIQUIDADOR ADH -->
+<div id="liqADHModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:var(--radius-lg);width:680px;max-width:96vw;max-height:92vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.3)">
+    <div style="background:#575756;color:#fff;padding:14px 20px;border-radius:var(--radius-lg) var(--radius-lg) 0 0;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-size:15px;font-weight:700">🔒 Liquidador Adhesivos — Uso Interno</span>
+      <button onclick="cerrarLiqADH()" style="background:none;border:none;cursor:pointer;color:#fff;font-size:20px">×</button>
+    </div>
+    <div style="padding:20px">
+      <div style="background:#f5f7f0;border:1px solid var(--border);border-radius:var(--radius-lg);padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:#575756;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Parámetros</div>
+        <div style="display:flex;gap:16px;flex-wrap:wrap;align-items:flex-end">
+          <div class="field-group" style="margin:0">
+            <label style="font-size:11px">Margen objetivo (%)</label>
+            <input type="number" id="liqADHMargen" value="30" min="0" max="70" step="1"
+              style="width:70px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit"
+              oninput="calcLiqADH()">
+          </div>
+          <div class="field-group" style="margin:0">
+            <label style="font-size:11px">TRM (USD/COP)</label>
+            <input type="number" id="liqADHTRM" value="4200" step="10"
+              style="width:90px;padding:5px 8px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit"
+              oninput="calcLiqADH()">
+          </div>
+        </div>
+      </div>
+      <div id="liqADHTabla"></div>
+      <div id="liqADHTotal" style="margin-top:12px"></div>
+    </div>
+  </div>
+</div>
 <div class="toast" id="toast"></div>
 
 <script>
@@ -1156,6 +1187,107 @@ function calcLiqSW(){
         <div><div style="font-size:10px;opacity:0.7;margin-bottom:4px">Retención SW</div><div style="font-size:14px;font-weight:800;color:#fcd34d">-${fEUR(totalRetencion)}</div><div style="font-size:10px;opacity:0.65;margin-top:2px">-${fCOPl(totalRetencion)}</div></div>
         <div><div style="font-size:10px;opacity:0.7;margin-bottom:4px">Utilidad Total</div><div style="font-size:14px;font-weight:800;color:${totalUtilidad>=0?'#86efac':'#fca5a5'}">${fEUR(totalUtilidad)}</div><div style="font-size:10px;opacity:0.65;margin-top:2px">${fCOPl(totalUtilidad)}</div><div style="font-size:12px;font-weight:700;margin-top:3px;opacity:0.9">${margenTotal.toFixed(1)}%</div></div>
         <div style="background:rgba(59,130,246,0.2);border-radius:var(--radius);padding:6px"><div style="font-size:10px;opacity:0.7;margin-bottom:4px">Comisión vendedor</div><div style="font-size:14px;font-weight:800;color:#93C5FD">${fEUR(comisionTotal)}</div><div style="font-size:10px;opacity:0.65;margin-top:2px">${fCOPl(comisionTotal)}</div><div style="font-size:10px;opacity:0.7;margin-top:2px">${(margenTotal*0.15).toFixed(2)}%</div></div>
+      </div>
+    </div>`;
+}
+
+
+// ══ LIQUIDADOR ADHESIVOS ══════════════════════════════
+let liqADHDesbloqueado = false;
+
+function abrirLiqADH(){
+  if(!liqADHDesbloqueado){
+    const clave=prompt('Clave para acceder al Liquidador:');
+    if(!clave) return;
+    if(clave!=='AYJ860'){showToast('Clave incorrecta','error');return;}
+    liqADHDesbloqueado=true;
+  }
+  if(!carrito.length){showToast('El carrito está vacío','error');return;}
+  const trm2=parseFloat(document.getElementById('trmInput')?.value)||4200;
+  document.getElementById('liqADHTRM').value=trm2;
+  calcLiqADH();
+  document.getElementById('liqADHModal').style.display='flex';
+}
+
+function cerrarLiqADH(){
+  document.getElementById('liqADHModal').style.display='none';
+}
+
+function calcLiqADH(){
+  const margenPct=parseFloat(document.getElementById('liqADHMargen')?.value)||30;
+  const trm2=parseFloat(document.getElementById('liqADHTRM')?.value)||4200;
+  const desc=getDescuento();
+  const fUSD2=n=>'USD '+Math.round(n||0).toLocaleString('es-CO');
+  const fCOP2=n=>'COP '+Math.round((n||0)*trm2).toLocaleString('es-CO');
+
+  const items=carrito;
+  if(!items.length){document.getElementById('liqADHTabla').innerHTML='<p style="color:var(--text2);text-align:center">Carrito vacío</p>';return;}
+
+  let totalVenta=0, totalCosto=0, totalUtilidad=0;
+  let filas='';
+
+  items.forEach((item,idx)=>{
+    const cant=item.cantidad||1;
+    const precioUnit=item.tarifa/cant;
+    const descUnitUSD=precioUnit*desc/100;
+    const ventaUnit=precioUnit-descUnitUSD;
+    const ventaTotal=ventaUnit*cant;
+    const costoUnit=item.costoTotal||item.costoAYJ||0;
+    const costoTot=costoUnit*cant;
+    const utilidad=ventaTotal-costoTot;
+    const margenReal=ventaTotal>0?utilidad/ventaTotal*100:0;
+    const comision=utilidad*0.15;
+
+    totalVenta+=ventaTotal;
+    totalCosto+=costoTot;
+    totalUtilidad+=utilidad;
+
+    filas+=`<tr style="border-bottom:1px solid var(--border);${margenReal<15?'background:#FFF5F5':''}">
+      <td style="padding:7px 12px;font-weight:600;font-size:12px">${item.nombre}</td>
+      <td style="padding:7px 12px;text-align:center;font-size:12px">${cant}</td>
+      <td style="padding:7px 12px;text-align:right;font-size:12px">${fUSD2(ventaUnit)}<br><span style="font-size:10px;color:#888">${fCOP2(ventaUnit)}</span></td>
+      <td style="padding:7px 12px;text-align:right;font-size:12px;color:#e24b4a">-${fUSD2(costoUnit)}<br><span style="font-size:10px;color:#888">-${fCOP2(costoUnit)}</span></td>
+      <td style="padding:7px 12px;text-align:right;font-size:12px;font-weight:700;color:${margenReal>=30?'#14532D':margenReal>=15?'#854F0B':'#991B1B'}">${fUSD2(utilidad)}<br><span style="font-size:10px">${margenReal.toFixed(1)}%</span></td>
+      <td style="padding:7px 12px;text-align:right;font-size:11px;color:#3B82F6">${fUSD2(comision)}</td>
+    </tr>`;
+  });
+
+  const margenTotal=totalVenta>0?totalUtilidad/totalVenta*100:0;
+  const comisionTotal=totalUtilidad*0.15;
+
+  document.getElementById('liqADHTabla').innerHTML=`
+    <table style="width:100%;border-collapse:collapse;font-size:12px;border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden">
+      <thead>
+        <tr style="background:#575756;color:#fff">
+          <th style="padding:8px 12px;text-align:left;font-size:11px">Producto</th>
+          <th style="padding:8px 12px;text-align:center;font-size:11px">Cant.</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px">P.Venta c/desc</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px">Costo</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px">Utilidad / %</th>
+          <th style="padding:8px 12px;text-align:right;font-size:11px;color:#93C5FD">Comisión</th>
+        </tr>
+      </thead>
+      <tbody>${filas}</tbody>
+    </table>`;
+
+  document.getElementById('liqADHTotal').innerHTML=`
+    <div style="background:#575756;color:#fff;border-radius:var(--radius-lg);padding:14px 16px">
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:12px;text-align:center">
+        <div><div style="font-size:10px;opacity:0.7;margin-bottom:4px">Total Venta</div>
+          <div style="font-size:14px;font-weight:800">${fUSD2(totalVenta)}</div>
+          <div style="font-size:10px;opacity:0.65;margin-top:2px">${fCOP2(totalVenta)}</div></div>
+        <div><div style="font-size:10px;opacity:0.7;margin-bottom:4px">Total Costo</div>
+          <div style="font-size:14px;font-weight:800;color:#fca5a5">-${fUSD2(totalCosto)}</div>
+          <div style="font-size:10px;opacity:0.65;margin-top:2px">-${fCOP2(totalCosto)}</div></div>
+        <div><div style="font-size:10px;opacity:0.7;margin-bottom:4px">Utilidad Total</div>
+          <div style="font-size:14px;font-weight:800;color:${totalUtilidad>=0?'#86efac':'#fca5a5'}">${fUSD2(totalUtilidad)}</div>
+          <div style="font-size:10px;opacity:0.65;margin-top:2px">${fCOP2(totalUtilidad)}</div>
+          <div style="font-size:12px;font-weight:700;margin-top:3px;opacity:0.9">${margenTotal.toFixed(1)}%</div></div>
+        <div style="background:rgba(59,130,246,0.2);border-radius:var(--radius);padding:6px">
+          <div style="font-size:10px;opacity:0.7;margin-bottom:4px">Comisión vendedor</div>
+          <div style="font-size:14px;font-weight:800;color:#93C5FD">${fUSD2(comisionTotal)}</div>
+          <div style="font-size:10px;opacity:0.65;margin-top:2px">${fCOP2(comisionTotal)}</div>
+          <div style="font-size:10px;opacity:0.7;margin-top:2px">${(margenTotal*0.15).toFixed(2)}%</div></div>
       </div>
     </div>`;
 }
