@@ -2186,7 +2186,7 @@ function generarPDF(d, soloRetornar=false){
   const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
     +'<title>'+d.numOferta+' - '+d.cliente+'</title>'
     +'<style>*{box-sizing:border-box;margin:0;padding:0}body{font-family:"Segoe UI",Arial,sans-serif;font-size:13px;color:#2a2a2a;background:#fff;padding:32px 40px;max-width:880px;margin:0 auto}'
-    +'@media print{body{padding:0}.no-print{display:none!important}@page{margin:12mm 14mm;size:A4}}'
+    +'@media print{body{padding:0}.no-print{display:none!important}@page{margin:12mm 14mm;size:A4}*{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}}'
     +'</style></head><body>'
 
     +'<div class="no-print" style="background:#575756;color:#fff;padding:10px 20px;margin:-32px -40px 24px;display:flex;align-items:center;gap:12px;">'
