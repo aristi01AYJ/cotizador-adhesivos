@@ -27,16 +27,16 @@ body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;font-siz
 .btn-login:hover{background:var(--green-dark)}
 .login-note{font-size:11px;color:var(--text3);margin-top:16px}
 #appScreen{display:none;flex-direction:column;height:100vh}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid var(--border);background:#fff;flex-shrink:0}
-.topbar-logo{font-size:15px;font-weight:600}.topbar-logo span{color:var(--green)}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:3px solid #6B6B6B;background:#6B6B6B;flex-shrink:0}
+.topbar-logo{font-size:15px;font-weight:600;color:#fff}.topbar-logo span{color:#80A61B}
 .topbar-right{display:flex;align-items:center;gap:10px}
-.user-chip{font-size:12px;color:var(--text2);background:var(--bg);padding:4px 10px;border-radius:20px;border:1px solid var(--border)}
-.btn-logout{background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:4px 8px;border-radius:var(--radius)}
+.user-chip{font-size:12px;color:rgba(255,255,255,0.8);background:rgba(255,255,255,0.1);padding:4px 10px;border-radius:20px;border:1px solid rgba(255,255,255,0.2)}
+.btn-logout{background:none;border:none;cursor:pointer;color:rgba(255,255,255,0.6);font-size:13px;padding:4px 8px;border-radius:var(--radius)}
 .btn-logout:hover{color:var(--red)}
 .nav{display:flex;gap:4px}
-.nav button{background:none;border:none;padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);font-family:inherit}
-.nav button.active{background:var(--bg);color:var(--text);font-weight:500}
-.nav button:hover:not(.active){background:var(--bg)}
+.nav button{background:none;border:none;padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:rgba(255,255,255,0.7);font-family:inherit}
+.nav button.active{background:rgba(255,255,255,0.15);color:#fff;font-weight:600}
+.nav button:hover:not(.active){background:rgba(255,255,255,0.1)}
 .main{display:flex;flex:1;overflow:hidden}
 .sidebar{width:300px;border-right:1px solid var(--border);background:#fff;display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
 .sidebar-header{padding:12px 14px;border-bottom:1px solid var(--border)}
@@ -247,7 +247,7 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
 
 <div id="appScreen">
   <div class="topbar">
-    <div class="topbar-logo"><img src="logo.png" alt="AYJ Maquinaria" style="height:28px;width:auto;vertical-align:middle;margin-right:6px;"><span style="font-size:13px;color:var(--text2);font-weight:400;">Cotizador</span></div>
+    <div class="topbar-logo"><img src="logo.png" alt="AYJ Maquinaria" style="height:28px;width:auto;vertical-align:middle;margin-right:6px;filter:brightness(0) invert(1)"><span style="font-size:11px;color:rgba(255,255,255,0.6);font-weight:400;letter-spacing:0.5px">Cotizador</span> <span style="font-size:13px;color:#fff;font-weight:800;letter-spacing:1px">ADHESIVOS</span></div>
     <div class="nav">
       <button class="active" id="navNueva" onclick="switchView('nueva')">Nueva oferta</button>
       <button id="navClientes" onclick="switchView('clientes')">Clientes</button>
