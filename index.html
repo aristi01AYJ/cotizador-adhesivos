@@ -1404,27 +1404,25 @@ async function cargarMaquinas(){
       if(tarifaRaw){const clean=String(tarifaRaw).replace(/[^0-9.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.');tarifa=parseFloat(clean)||0;}
       const _ft=f.Ficha_x0020_Tecnica||f.FichaTecnica||f.Ficha_Tecnica||null;
       const fichaTecnica=_ft?(typeof _ft==='object'?(_ft.Url||''):String(_ft).trim()):'';
-      // Adhesivos: CostoTotal viene de SP, TARIFA calculada si vacía
-      const costoTotal=parseFloat(String(f.CostoTotal||f.Costo_Total||'0').replace(/[^0-9.,]/g,'').replace(',','.'))||0;
+      const costoTotal=parseFloat(String(f.CostoTotal||'0').replace(/[^0-9.,]/g,'').replace(',','.'))||0;
       const costoAYJ=parseFloat(String(f.COSTO_AYJ||'0').replace(/[^0-9.,]/g,'').replace(',','.'))||0;
-      const cantidad=parseInt(f.CANTIDAD||f.Cantidad||1)||1;
+      const cantidad=parseInt(f.CANTIDAD||1)||1;
       const margenStd=0.30;
-      // TARIFA: usar la de SP si existe, sino calcular con margen 30%
       let tarifaFinal=tarifa;
       if(!tarifaFinal&&costoTotal>0) tarifaFinal=Math.round(costoTotal/(1-margenStd)*100)/100;
-      const presentacion=(f.Presentaci_x00f3_n||f.Presentacion||f.Presentación||'').trim();
+      const presentacion=(f.Presentaci_x00f3_n||f.Presentacion||'').trim();
       return{
         id:i.id,
         title:(f.Title||'').trim(),
-        modelo:(f.Modelo||f.Descripci_x00f3_n||f.Descripcion||'').trim(),
-        marca:(f[marcaField]||f.Marca||f.Marca0||'JOWAT').trim(),
-        tipologia:(f[tipologiaField]||f.Tipologia||'ADHESIVO').trim(),
+        modelo:(f.Modelo||'').trim(),
+        marca:(f.Marca0||f.Marca||'JOWAT').trim(),
+        tipologia:(f.Tipologia||'ADHESIVO').trim(),
         tipoLicencia:'',licenciamiento:'',
-        estadoDisp:(f.ESTADO_||'DISPONIBLE').trim().toUpperCase()||'DISPONIBLE',
+        estadoDisp:'DISPONIBLE',
         estadoStock:'Disponible',
         tarifa:tarifaFinal,
         costoTotal,costoAYJ,cantidad,presentacion,
-        descripcion:(f.Modelo||f.Descripci_x00f3_n||f.Descripcion||'').trim(),
+        descripcion:(f.Modelo||'').trim(),
         fichaTecnica,
         ytVideo:(()=>{const v=f.YTvideo||f.YTVideo||null;return v?(typeof v==='object'?(v.Url||''):String(v).trim()):'';})(),
         horasInstalacion:0,costoAYJ,moneda:'USD',
