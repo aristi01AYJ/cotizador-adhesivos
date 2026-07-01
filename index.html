@@ -1398,6 +1398,7 @@ async function cargarMaquinas(){
     const todos=await graphGetAll(`/sites/${siteId}/lists/${listIdMaquinas}/items?expand=fields&$select=id,fields&$top=200`);
     rawMaquinas=todos.map(i=>{
       const f=i.fields;
+      if(todos.indexOf(i)===0) console.log('[ADH] Campos primer item:', JSON.stringify(f));
       let tarifa=0;
       const tarifaRaw=f.TARIFA||0;
       if(tarifaRaw){const clean=String(tarifaRaw).replace(/[^0-9.,]/g,'').replace(/\.(?=\d{3})/g,'').replace(',','.');tarifa=parseFloat(clean)||0;}
