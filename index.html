@@ -358,8 +358,12 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
         </div>
         <div class="field-group" style="margin:0">
           <label style="font-size:10px">Tiempo de entrega</label>
-          <span style="font-size:11px;color:var(--text2);display:block;max-width:220px;line-height:1.3">Entrega de licencias 2 a 5 días hábiles. Instalación, capacitación e implementación según proyecto.</span>
-          <input type="hidden" id="entregaSel" value="Entrega de licencias 2 a 5 días hábiles. Instalación, capacitación e implementación según proyecto.">
+          <select id="entregaSel" onchange="onEntregaChange(this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius);font-family:inherit">
+            <option value="Entrega inmediata">Entrega inmediata</option>
+            <option value="Entrega en 15 días hábiles">Entrega en 15 días hábiles</option>
+            <option value="__custom_entrega__">✏️ Personalizar...</option>
+          </select>
+          <div id="entregaLabel" style="font-size:10px;color:var(--text2);margin-top:2px;display:none"></div>
         </div>
 
         <div class="field-group" style="margin:0;flex:1;min-width:200px">
@@ -382,7 +386,7 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
                 <th style="width:100px">Tipología</th>
                 <th style="width:80px;text-align:center">Docs</th>
                 <th style="width:90px;text-align:center">Cant.</th>
-                <th style="width:110px;text-align:right">EUR</th>
+                <th style="width:110px;text-align:right">USD</th>
                 <th style="width:110px;text-align:right">COP</th>
                 <th style="width:30px"></th>
               </tr>
@@ -1369,7 +1373,7 @@ function mapItem(i){
     ubicacion:'',descripcion:'',
     fichaTecnica,
     ytVideo:(()=>{const v=f.YTvideo||f.YTVideo||f.Ytvideo||null;return v?(typeof v==='object'?(v.Url||''):String(v).trim()):'';})(),
-    observaciones:'',horasInstalacion:0,moneda:'EUR',
+    observaciones:'',horasInstalacion:0,moneda:'USD',
   };
 }
 
@@ -1445,7 +1449,7 @@ function procesarCatalogo(){
       tipologia:m.tipologia,tipoLicencia:m.tipoLicencia||'',licenciamiento:m.licenciamiento||'',
       tarifa:m.tarifa,descripcion:m.descripcion,
       fichaTecnica:m.fichaTecnica,ytVideo:m.ytVideo||'',
-      stockCount:99,importCount:0,horasInstalacion:m.horasInstalacion||0,costoAYJ:m.costoAYJ||0,moneda:'EUR'};
+      stockCount:99,importCount:0,horasInstalacion:m.horasInstalacion||0,costoAYJ:m.costoAYJ||0,moneda:'USD'};
     if(m.ytVideo&&!mapa[key].ytVideo)mapa[key].ytVideo=m.ytVideo;
     if(m.fichaTecnica&&!mapa[key].fichaTecnica)mapa[key].fichaTecnica=m.fichaTecnica;
     if(m.tipoLicencia&&!mapa[key].tipoLicencia)mapa[key].tipoLicencia=m.tipoLicencia;
@@ -1535,14 +1539,8 @@ function buildGrupoCard(g){
   div.dataset.gkey=btoa(encodeURIComponent(g.key));
 
   // Badge tipo licencia
-  const tl=(g.tipoLicencia||'').toLowerCase();
-  const licBadge=tl.includes('perpetua')
-    ?'<span class="stock-badge" style="background:#EDE9FE;color:#5B21B6">📄 Lic. Perpetua</span>'
-    :tl.includes('suscripcion')||tl.includes('suscripción')
-      ?'<span class="stock-badge" style="background:#DBEAFE;color:#1E3A8A">🔄 Suscripción</span>'
-      :tl.includes('servicio')
-        ?'<span class="stock-badge" style="background:#FEF3C7;color:#92400E">🔧 Servicio</span>'
-        :'<span class="stock-badge" style="background:#DCFCE7;color:#14532D">✅ Disponible</span>';
+  const licBadge='<span class="stock-badge" style="background:#DCFCE7;color:#14532D">✅ Disponible</span>'
+    +(g.presentacion?'<span class="stock-badge" style="background:#F1F5F9;color:#475569;margin-left:4px">'+g.presentacion+'</span>':'');
 
   const accion=inCart
     ?'<button class="btn-cat remove" onclick="quitarGrupoData(this,\'stock\')"><i class="ti ti-x"></i> Quitar</button>'
@@ -1612,7 +1610,8 @@ function renderCarrito(){
   carrito.forEach((item,i)=>{
     const pdfCell=item.fichaTecnica?`<a class="btn-pdf" href="${item.fichaTecnica}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--red);white-space:nowrap;"><i class="ti ti-file-type-pdf" style="font-size:14px"></i> Ver Ficha Técnica</a>`:'';
     const ytCell=item.ytVideo?`<a class="btn-pdf" href="${item.ytVideo}" target="_blank" title="Ver video en YouTube" style="color:#FF0000"><i class="ti ti-brand-youtube"></i></a>`:'';
-    const badge=getLicBadge(item.tipoLicencia,item.licenciamiento,item.marca);
+    const badge='<span style="background:#DCFCE7;color:#14532D;font-size:10px;padding:2px 7px;border-radius:20px;font-weight:600;display:inline-block">✅ Disponible</span>'
+      +(item.presentacion?'<span style="background:#F1F5F9;color:#475569;font-size:10px;padding:2px 7px;border-radius:20px;display:inline-block;margin-left:4px">'+item.presentacion+'</span>':'');
     const precioUnit=item.tarifa/(item.cantidad||1);
     const tr=document.createElement('tr');
     tr.innerHTML=`<td style="color:var(--text3);font-size:12px">${i+1}</td>`
@@ -2007,7 +2006,7 @@ async function guardarCotizacion(){
       CondicionPago:condPago,
       Validez:validez,
       Probabilidad:0,
-      Items:JSON.stringify(carrito.map(i=>({n:i.nombre,t:i.tarifa,c:i.cantidad,tl:i.tipoLicencia||'',m:'EUR',tce:trm}))),
+      Items:JSON.stringify(carrito.map(i=>({n:i.nombre,t:i.tarifa,c:i.cantidad,tl:'',m:'USD',trm:trm}))),
     };
     let itemCreado;
     try{
@@ -2132,11 +2131,11 @@ function generarPDF(d, soloRetornar=false){
     +'</td></tr></table>'
     +'<div style="background:#f9f9f7;border-radius:8px;border:1px solid #e0e0dc;padding:16px 20px;margin-bottom:14px;">'
     +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
-    +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Tiempo de entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>Entrega de licencias 2 a 5 días hábiles.</strong><br>Instalación, capacitación e implementación según proyecto.</td></tr>'
+    +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Tiempo de entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+(d.entrega||'Entrega inmediata')+'</strong></td></tr>'
     +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Requerimientos</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><a href="https://support.imos3d.com/en/software/system-requirements/system-requirements-ix-2025" style="color:#1D9E75">System Requirements iX 2025 →</a></td></tr>'
     +(d.voltaje?'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Voltaje requerido</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+d.voltaje+'</strong></td></tr>':'')
     +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Entrega digital para descarga online. Licenciamiento web. No se realiza entrega física.</td></tr>'
-    +(d.modoCOP?'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>Precio en Pesos Colombianos (COP).</strong> El precio pactado es en moneda local y no está referenciado a dólares ni a la TRM.</td></tr>':'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda / TCE</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Precios en EUR. Pagos en COP a la tasa de cambio EUR/COP del día en que el pago se hace efectivo en las cuentas de AYJ. <strong>TCE de referencia: '+fTRM(d.trm)+' COP/USD.</strong></td></tr>')
+    +(d.modoCOP?'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>Precio en Pesos Colombianos (COP).</strong> El precio pactado es en moneda local y no está referenciado a dólares ni a la TRM.</td></tr>':'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda / TCE</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Precios en USD. Pagos en COP a la TRM del día del día en que el pago se hace efectivo en las cuentas de AYJ. <strong>TRM de referencia: '+fTRM(d.trm)+' COP/USD.</strong></td></tr>')
     +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Condición de pago</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+d.condPago+'.</strong> Una vez aceptada la oferta y recibidos los anticipos, el COMPRADOR podrá desistir dentro de los 10 días calendario siguientes, perdiendo el 30% del valor total a título de sanción.</td></tr>'
     +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Instalación</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Instalación, capacitación e implementación se realizan mediante coordinación según los servicios adquiridos.</td></tr>'
 
