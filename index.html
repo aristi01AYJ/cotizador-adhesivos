@@ -1348,9 +1348,10 @@ async function resolverSite(){
     const lists=await graphGet(`/sites/${siteId}/lists?$select=id,displayName`);
     lists.value.forEach(l=>{
       const n=l.displayName.toLowerCase();
+      console.log('[ADH] Lista SP:', l.displayName, '→', n);
       if(n.includes('adhesivos_list')||n.includes('adhesivo'))listIdMaquinas=l.id;
       else if(n.includes('cliente'))listIdClientes=l.id;
-      else if(n.includes('cotizaciones_adh')||n.includes('cotizacion_adh')||n.includes('cotizaciones_adhesivos'))listIdCotizaciones=l.id;
+      else if(n.includes('cotizaciones_adh')||n.includes('cotizacion_adh')||n.includes('cotizaciones_adhesivos')||n.includes('cotizaciones adh')||(n.includes('cotizaci')&&n.includes('adh')))listIdCotizaciones=l.id;
       else if(n.includes('liquidaci'))listIdLiquidaciones=l.id;
     });
   }catch(e){showToast('Error conectando SharePoint: '+e.message,'error');}
