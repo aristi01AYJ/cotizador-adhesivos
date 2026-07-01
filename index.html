@@ -1449,7 +1449,8 @@ function procesarCatalogo(){
   disponibles.forEach(m=>{
     const key=m.title.toLowerCase().trim();
     if(!mapa[key])mapa[key]={key,title:m.title,marca:m.marca,modelo:m.modelo,
-      tipologia:m.tipologia,tipoLicencia:m.tipoLicencia||'',licenciamiento:m.licenciamiento||'',
+      tipologia:m.tipologia,tipoLicencia:'',licenciamiento:'',
+      presentacion:m.presentacion||'',costoTotal:m.costoTotal||0,costoAYJ:m.costoAYJ||0,cantidad:m.cantidad||1,
       tarifa:m.tarifa,descripcion:m.descripcion,
       fichaTecnica:m.fichaTecnica,ytVideo:m.ytVideo||'',
       stockCount:99,importCount:0,horasInstalacion:m.horasInstalacion||0,costoAYJ:m.costoAYJ||0,moneda:'USD'};
@@ -1464,16 +1465,15 @@ function procesarCatalogo(){
 
 async function cargarTRM(){
   try{
-    // open.er-api.com — CORS habilitado, gratuita
     const r=await fetch('https://open.er-api.com/v6/latest/USD');
     const d=await r.json();
-    const rate=Math.round(d.rates?.COP||4200);
-    trm=rate;
-    document.getElementById('trmInput').value=rate;
-    document.getElementById('trmLabel').textContent='$ '+rate.toLocaleString('es-CO')+' COP/USD';
+    const base=Math.round(d.rates?.COP||4200);
+    trm=base+350;
+    document.getElementById('trmInput').value=trm;
+    document.getElementById('trmLabel').textContent='$ '+trm.toLocaleString('es-CO')+' COP/USD (+350)';
     calcTotales();
   }catch(e){
-    trm=parseFloat(document.getElementById('trmInput').value)||4000;
+    trm=parseFloat(document.getElementById('trmInput').value)||4550;
     document.getElementById('trmLabel').textContent='$ '+Math.round(trm).toLocaleString('es-CO')+' COP/USD';
   }
 }
