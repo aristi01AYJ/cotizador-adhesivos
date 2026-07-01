@@ -370,6 +370,9 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
           <label style="font-size:10px">Observaciones</label>
           <input type="text" id="obsInput" placeholder="📝 Notas para el cliente..." style="width:100%;padding:5px 8px;border:1px solid #F59E0B;border-radius:var(--radius);font-size:12px;font-family:inherit;background:#fffdf5">
         </div>
+        <div style="background:#FEF9EC;border:1px solid #F59E0B;border-radius:var(--radius);padding:5px 10px;font-size:11px;color:#92400E;font-weight:600;white-space:nowrap;flex-shrink:0">
+          🚛 Fletes no incluidos
+        </div>
       </div>
       <div class="cot-area">
         <div class="empty-state" id="emptyState">
@@ -386,7 +389,7 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
                 <th style="width:100px">Tipología</th>
                 <th style="width:80px;text-align:center">Docs</th>
                 <th style="width:90px;text-align:center">Cant.</th>
-                <th style="width:110px;text-align:right">USD</th>
+                <th style="width:110px;text-align:right">COP</th>
                 <th style="width:110px;text-align:right">COP</th>
                 <th style="width:30px"></th>
               </tr>
@@ -1478,18 +1481,8 @@ async function cargarTRM(){
 }
 
 async function resetTRM(){
-  try{
-    const r=await fetch('https://open.er-api.com/v6/latest/USD');
-    const d=await r.json();
-    const rate=Math.round(d.rates?.COP||4200);
-    trm=rate;
-    document.getElementById('trmInput').value=rate;
-    document.getElementById('trmLabel').textContent='$ '+rate.toLocaleString('es-CO')+' COP/USD';
-    calcTotales();
-    showToast('✓ Tasa EUR/COP: '+rate.toLocaleString('es-CO'),'success');
-  }catch(e){
-    showToast('No se pudo obtener la tasa EUR/COP','error');
-  }
+  await cargarTRM();
+  showToast('✓ TRM actualizada: $ '+trm.toLocaleString('es-CO')+' (BanRep+350)','success');
 }
 
 function onTrmChange(){
@@ -1559,8 +1552,8 @@ function buildGrupoCard(g){
           ${g.fichaTecnica?`<a href="${g.fichaTecnica}" target="_blank" style="color:var(--red);font-size:15px" title="Ficha técnica"><i class="ti ti-file-type-pdf"></i></a>`:''}
           ${g.ytVideo?`<a href="${g.ytVideo}" target="_blank" style="color:#FF0000;font-size:15px" title="Ver video"><i class="ti ti-brand-youtube"></i></a>`:''}
         </div>
-        <div class="precio-usd" style="color:#1D9E75">USD ${Math.round(g.tarifa).toLocaleString('es-CO')}</div>
-        <div class="precio-cop">${fmtCOP(g.tarifa)}</div>
+        <div class="precio-usd" style="color:#1D9E75">COP ${Math.round(g.tarifa*trm).toLocaleString('es-CO')}</div>
+        <div class="precio-cop" style="display:none"></div>
       </div>
     </div>
     <div class="stock-row">${licBadge}</div>
@@ -1633,12 +1626,12 @@ function renderCarrito(){
           +`<input type="number" min="1" value="${item.cantidad||1}" onchange="setCantCarrito(${i},this.value)" style="width:38px;text-align:center;padding:2px;border:1px solid var(--border);border-radius:3px;font-size:13px;font-weight:600;font-family:inherit">`
           +`<button onclick="cambiarCantCarrito(${i},1)" style="width:20px;height:20px;border:1px solid var(--green);border-radius:3px;background:var(--green-light);cursor:pointer;font-size:12px;line-height:1;color:var(--green-dark);font-family:inherit">+</button>`
         +`</div>`
-        +`<div style="font-size:9px;color:var(--text3);margin-top:1px">${fmtUSD(precioUnit)}/u</div>`
+        +`<div style="font-size:9px;color:var(--text3);margin-top:1px">${fmtCOP(precioUnit)}/u</div>`
       +`</td>`
       +`<td class="price-cell" style="vertical-align:middle">`
       +(window.precioDesbloqueado
         ?`<div style="display:flex;align-items:center;gap:3px;justify-content:center"><span style="font-size:10px;color:var(--text2)">USD</span><input type="number" min="0" value="${Math.round(item.tarifa/(item.cantidad||1))}" onchange="editarPrecioItem(${i},this.value)" style="width:70px;padding:2px 4px;border:1px solid #F59E0B;border-radius:3px;font-size:12px;font-family:inherit;text-align:right;background:#fffbf0"></div>`
-        :`<div class="price-usd-item" id="pusd_${i}">${fmtUSD(item.tarifa)}</div>`)
+        :`<div class="price-usd-item" id="pusd_${i}" style="color:var(--green-dark);font-weight:600">${fmtCOP(item.tarifa)}</div>`)
       +`</td>`
       +`<td class="price-cell" style="vertical-align:middle"><div class="price-cop-item" id="pcop_${i}">${fmtCOP(item.tarifa)}</div></td>`
       +`<td style="vertical-align:middle"><button class="btn-remove" onclick="removerItem(${i})"><i class="ti ti-x"></i></button></td>`;
@@ -1675,19 +1668,19 @@ function calcTotales(){
   const ivaUSD=baseUSD*ivaPct/100;
   const totalUSD=baseUSD+ivaUSD;
   const totalCOP=Math.round(totalUSD*trm);
-  document.getElementById('tSubUSD').textContent=fmtUSD(subUSD);
-  document.getElementById('tSubCOP').textContent=fmtCOP(subUSD);
-  document.getElementById('tDescUSD').textContent='-'+fmtUSD(descUSD);
-  document.getElementById('tDescCOP').textContent='-'+fmtCOP(descUSD);
+  document.getElementById('tSubUSD').textContent=fmtCOP(subUSD);
+  document.getElementById('tSubCOP').textContent='';
+  document.getElementById('tDescUSD').textContent='-'+fmtCOP(descUSD);
+  document.getElementById('tDescCOP').textContent='';
   // Precio antes de IVA
-  document.getElementById('tBaseIvaUSD').textContent=fmtUSD(baseUSD);
-  document.getElementById('tBaseIvaCOP').textContent=fmtCOP(baseUSD);
-  document.getElementById('tIVAUSD').textContent=fmtUSD(ivaUSD);
-  document.getElementById('tIVACOP').textContent=fmtCOP(ivaUSD);
+  document.getElementById('tBaseIvaUSD').textContent=fmtCOP(baseUSD);
+  document.getElementById('tBaseIvaCOP').textContent='';
+  document.getElementById('tIVAUSD').textContent=fmtCOP(ivaUSD);
+  document.getElementById('tIVACOP').textContent='';
   const fleteLabel=document.getElementById('fleteUSDLabel');
   if(fleteLabel) fleteLabel.textContent='';
-  document.getElementById('tTotalUSD').textContent=fmtUSD(totalUSD);
-  document.getElementById('tTotalCOP').textContent='COP '+totalCOP.toLocaleString('es-CO');
+  document.getElementById('tTotalUSD').textContent=fmtCOP(totalUSD);
+  document.getElementById('tTotalCOP').textContent='';
   calcMG();
 }
 
@@ -1999,7 +1992,7 @@ async function guardarCotizacion(){
       ID_SYNERGY:numOferta,
       IDSynergy:idSynergy||'',
       Cliente:cliente||'Sin cliente',
-      GranTotal:Math.round(totalCOP),
+      GranTotal:Math.round(totalUSD*trm),
       Estado:'Enviada',
       Vendedor:vendedor||currentUserName||'Sin vendedor',
       Descuento:desc,
@@ -2133,6 +2126,7 @@ function generarPDF(d, soloRetornar=false){
     +'</td></tr></table>'
     +'<div style="background:#f9f9f7;border-radius:8px;border:1px solid #e0e0dc;padding:16px 20px;margin-bottom:14px;">'
     +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
+    +'<tr><td colspan="2" style="padding:8px 12px;background:#FEF9EC;border:1px solid #F59E0B;border-radius:6px;color:#92400E;font-weight:700;font-size:12px;margin-bottom:8px;">🚛 Fletes no incluidos en esta oferta. Consultar con el asesor comercial.</td></tr>'
     +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Tiempo de entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+(d.entrega||'Entrega inmediata')+'</strong></td></tr>'
     +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Requerimientos</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><a href="https://support.imos3d.com/en/software/system-requirements/system-requirements-ix-2025" style="color:#1D9E75">System Requirements iX 2025 →</a></td></tr>'
     +(d.voltaje?'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Voltaje requerido</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+d.voltaje+'</strong></td></tr>':'')
@@ -2232,7 +2226,7 @@ function generarPDF(d, soloRetornar=false){
     +'<th style="padding:10px 8px;text-align:center;font-size:10px;font-weight:600;width:28px;">#</th>'
     +'<th style="padding:10px 12px;text-align:left;font-size:10px;font-weight:600;text-transform:uppercase;letter-spacing:0.5px;">Descripción</th>'
     +'<th style="padding:10px 8px;text-align:center;font-size:10px;font-weight:600;width:50px;text-transform:uppercase;">Cant.</th>'
-    +'<th style="padding:10px 10px;text-align:right;font-size:10px;font-weight:600;width:110px;text-transform:uppercase;">P. Unit.</th>'
+    +'<th style="padding:10px 10px;text-align:right;font-size:10px;font-weight:600;width:110px;text-transform:uppercase;">P. Unit. COP</th>'
     +(d.modoCOP?'<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;width:130px;text-transform:uppercase;">Total COP</th>':'<th style="padding:10px 12px;text-align:right;font-size:10px;font-weight:600;width:130px;text-transform:uppercase;">Total EUR</th>')
     +'</tr></thead>'
     +'<tbody>'+filas+'</tbody></table>'
