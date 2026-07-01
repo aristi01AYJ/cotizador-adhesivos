@@ -392,32 +392,23 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
         </div>
       </div>
       <div class="footer">
-        <!-- Descuentos diferenciados -->
-        <div style="flex-shrink:0;display:flex;flex-direction:column;gap:4px">
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:#5B21B6;font-weight:600;width:90px">📄 Licencias</span>
-            <input type="number" id="descInput" value="0" min="0" max="20" style="width:44px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:inherit" oninput="validarDescuento(this)">
-            <span style="font-size:10px;color:var(--text2)" id="descMaxLabel">%</span>
-            <button onclick="solicitarClaveDesc()" id="descLockBtn" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:12px;padding:0;line-height:1">🔒</button>
-            <button onclick="toggleMGPanel()" id="mgBtn" style="background:#f0f4e8;border:1.5px solid var(--green);color:var(--green-dark);border-radius:20px;padding:1px 7px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">MG</button>
+        <!-- Descuento único -->
+        <div style="flex-shrink:0">
+          <div style="font-size:10px;color:var(--text2);margin-bottom:2px">Descuento (%)</div>
+          <div style="display:flex;align-items:center;gap:4px">
+            <input type="number" id="descInput" value="0" min="0" max="20" style="width:52px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius);font-size:13px;font-family:inherit" oninput="validarDescuento(this)">
+            <span style="font-size:10px;color:var(--text2)" id="descMaxLabel">máx 20%</span>
+            <button onclick="solicitarClaveDesc()" id="descLockBtn" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0;line-height:1">🔒</button>
+            <button onclick="toggleMGPanel()" id="mgBtn" style="background:#f0f4e8;border:1.5px solid var(--green);color:var(--green-dark);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">MG</button>
             <label style="display:flex;align-items:center;gap:3px;font-size:10px;cursor:pointer">
               <input type="checkbox" id="descEspecialChk" onchange="toggleDescEspecial(this.checked)" style="cursor:pointer">
-              <span id="descEspecialLabel" style="color:var(--text2);white-space:nowrap">+3%</span>
+              <span id="descEspecialLabel" style="color:var(--text2);white-space:nowrap">+3% especial</span>
             </label>
-            <span id="descTotalBadge" style="display:none;font-size:10px;padding:1px 5px;border-radius:20px;background:var(--amber-light);color:var(--amber);font-weight:600"></span>
+            <span id="descTotalBadge" style="display:none;font-size:10px;padding:2px 6px;border-radius:20px;background:var(--amber-light);color:var(--amber);font-weight:600"></span>
           </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:#C2410C;font-weight:600;width:90px">🔧 Serv. AYJ</span>
-            <input type="number" id="descAYJ" value="0" min="0" max="30" style="width:44px;padding:3px 5px;border:1px solid var(--border);border-radius:var(--radius);font-size:12px;font-family:inherit" oninput="calcTotales()">
-            <span style="font-size:10px;color:var(--text2)">%</span>
-          </div>
-          <div style="display:flex;align-items:center;gap:6px">
-            <span style="font-size:10px;color:var(--text3);font-weight:600;width:90px">🔧 Serv. imos</span>
-            <span style="font-size:11px;color:var(--text3);background:var(--bg);padding:2px 8px;border-radius:var(--radius);border:1px solid var(--border)">0% fijo</span>
-          </div>
-          <div id="descCausalWrap" style="display:none;margin-top:2px;width:200px">
+          <div id="descCausalWrap" style="display:none;margin-top:4px;width:220px">
             <select id="descEspecialCausal" onchange="actualizarDescBadge()" style="width:100%;font-size:11px;padding:3px 6px;border:1px solid #F59E0B;border-radius:var(--radius);background:#fffbf0;color:#854F0B;font-family:inherit">
-              <option value="">— Causal —</option>
+              <option value="">— Causal del descuento especial —</option>
               <option>Compra de Combo</option>
               <option>Pago 100% anticipado</option>
               <option>Promo evento</option>
@@ -436,18 +427,18 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
             <div style="background:#fff;border-radius:var(--radius);padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">Descuento</div><div style="font-size:18px;font-weight:800;color:var(--gris)" id="mgDescPct">0%</div></div>
             <div style="background:#fff;border-radius:var(--radius);padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">Margen</div><div style="font-size:18px;font-weight:800;color:var(--green-dark)" id="mgMargenPct">50.000%</div></div>
             <div style="background:#fff;border-radius:var(--radius);padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">Comisión %</div><div style="font-size:18px;font-weight:800;color:#3B82F6" id="mgComPct">7.500%</div></div>
-            <div style="background:#fff;border-radius:var(--radius);padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">Comisión EUR</div><div style="font-size:15px;font-weight:800;color:#3B82F6" id="mgComUSD">EUR 0</div></div>
+            <div style="background:#fff;border-radius:var(--radius);padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">Comisión EUR</div><div style="font-size:15px;font-weight:800;color:#3B82F6" id="mgComUSD">USD 0</div></div>
             <div style="background:#fff;border-radius:var(--radius);padding:10px;text-align:center;border:1px solid var(--border)"><div style="font-size:10px;color:var(--text2);margin-bottom:4px">Comisión COP</div><div style="font-size:15px;font-weight:800;color:#3B82F6" id="mgComCOP">COP 0</div></div>
           </div>
-          <div style="font-size:11px;color:var(--text2);background:#fff;border-radius:var(--radius);padding:8px 12px;border:1px solid var(--border)">Base de cálculo: <strong id="mgBaseUSD">EUR 0</strong></div>
+          <div style="font-size:11px;color:var(--text2);background:#fff;border-radius:var(--radius);padding:8px 12px;border:1px solid var(--border)">Base de cálculo: <strong id="mgBaseUSD">USD 0</strong></div>
         </div>
         <!-- Totales -->
         <div class="totales">
-          <div class="total-item"><span class="total-label">Subtotal</span><span class="total-val" id="tSubUSD">EUR 0</span><span class="total-val sub2" id="tSubCOP">COP 0</span></div>
-          <div class="total-item"><span class="total-label">Descuento</span><span class="total-val" id="tDescUSD" style="color:#e24b4a">-EUR 0</span><span class="total-val sub2" id="tDescCOP" style="color:#e24b4a">-COP 0</span></div>
-          <div class="total-item" id="tBaseIvaWrap" style="border-top:1px dashed var(--border);padding-top:4px;margin-top:2px"><span class="total-label" style="font-weight:600">Precio s/IVA</span><span class="total-val" id="tBaseIvaUSD" style="font-weight:600">EUR 0</span><span class="total-val sub2" id="tBaseIvaCOP">COP 0</span></div>
-          <div class="total-item"><span class="total-label">IVA 19%</span><span class="total-val" id="tIVAUSD" style="color:#666">EUR 0</span><span class="total-val sub2" id="tIVACOP" style="color:#666">COP 0</span></div>
-          <div class="total-item"><span class="total-label">Total oferta</span><span class="total-val big" id="tTotalUSD">EUR 0</span><span class="total-val big2" id="tTotalCOP">COP 0</span></div>
+          <div class="total-item"><span class="total-label">Subtotal</span><span class="total-val" id="tSubUSD">USD 0</span><span class="total-val sub2" id="tSubCOP">COP 0</span></div>
+          <div class="total-item"><span class="total-label">Descuento</span><span class="total-val" id="tDescUSD" style="color:#e24b4a">-USD 0</span><span class="total-val sub2" id="tDescCOP" style="color:#e24b4a">-COP 0</span></div>
+          <div class="total-item" id="tBaseIvaWrap" style="border-top:1px dashed var(--border);padding-top:4px;margin-top:2px"><span class="total-label" style="font-weight:600">Precio s/IVA</span><span class="total-val" id="tBaseIvaUSD" style="font-weight:600">USD 0</span><span class="total-val sub2" id="tBaseIvaCOP">COP 0</span></div>
+          <div class="total-item"><span class="total-label">IVA 19%</span><span class="total-val" id="tIVAUSD" style="color:#666">USD 0</span><span class="total-val sub2" id="tIVACOP" style="color:#666">COP 0</span></div>
+          <div class="total-item"><span class="total-label">Total oferta</span><span class="total-val big" id="tTotalUSD">USD 0</span><span class="total-val big2" id="tTotalCOP">COP 0</span></div>
           <button class="btn-sec" onclick="nuevaCotizacion()"><i class="ti ti-plus"></i> Nueva Cotización</button>
           <button class="btn-primary" id="btnGuardar" onclick="guardarCotizacion()"><i class="ti ti-device-floppy"></i> Guardar y PDF</button>
         </div>
@@ -1089,7 +1080,7 @@ function cerrarLiqSW(){
 function calcLiqSW(){
   const retencionPct=parseFloat(document.getElementById('liqSWRetencion')?.value)||22;
   const tce=parseFloat(document.getElementById('liqSWTCE')?.value)||4000;
-  const fEUR=n=>'€ '+Math.round(n||0).toLocaleString('es-CO');
+  const fEUR=n=>'USD '+Math.round(n||0).toLocaleString('es-CO');
   const fCOPl=n=>'COP '+Math.round((n||0)*tce).toLocaleString('es-CO');
 
   // Agrupar carrito
@@ -1534,7 +1525,7 @@ function renderCatalogo(){
   if(!el.querySelector('.grupo-card')&&!el.querySelector('.bp-card'))el.innerHTML='<div class="loading-list">Sin resultados</div>';
 }
 
-function fmtUSD(n){return 'EUR '+Math.round(n).toLocaleString('es-CO');}
+function fmtUSD(n){return 'USD '+Math.round(n).toLocaleString('es-CO');}
 function fmtCOP(n){return 'COP '+Math.round(n*trm).toLocaleString('es-CO');}
 
 function buildGrupoCard(g){
@@ -1675,35 +1666,18 @@ function removerItem(i){carrito.splice(i,1);renderCarrito();calcTotales();render
 
 function calcTotales(){
   const desc=getDescuento();
-  const descAYJpct=parseFloat(document.getElementById('descAYJ')?.value)||0;
   const fleteCOP=0;
   const ivaPct=19;
-  // Separar por grupo
-  const itemsLic=carrito.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Software');
-  const itemsAYJ=carrito.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Servicios AYJ');
-  const itemsImos=carrito.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Servicios imos');
-  const subLic=itemsLic.reduce((s,i)=>s+i.tarifa,0);
-  const subAYJ=itemsAYJ.reduce((s,i)=>s+i.tarifa,0);
-  const subImos=itemsImos.reduce((s,i)=>s+i.tarifa,0);
-  const subUSD=subLic+subAYJ+subImos;
-  // Descuentos por grupo
-  const descLicUSD=subLic*desc/100;
-  const descAYJUSD=subAYJ*descAYJpct/100;
-  const descImosUSD=0; // siempre 0
-  const descUSD=descLicUSD+descAYJUSD+descImosUSD;
+  const subUSD=carrito.reduce((s,i)=>s+(i.tarifa||0),0);
+  const descUSD=subUSD*desc/100;
   const baseUSD=subUSD-descUSD;
   const ivaUSD=baseUSD*ivaPct/100;
-  const fleteUSD=0;
   const totalUSD=baseUSD+ivaUSD;
   const totalCOP=Math.round(totalUSD*trm);
   document.getElementById('tSubUSD').textContent=fmtUSD(subUSD);
   document.getElementById('tSubCOP').textContent=fmtCOP(subUSD);
-  // Mostrar descuentos diferenciados
-  const descLabel=[]
-  if(descLicUSD>0) descLabel.push('Lic: -'+fmtUSD(descLicUSD));
-  if(descAYJUSD>0) descLabel.push('AYJ: -'+fmtUSD(descAYJUSD));
-  document.getElementById('tDescUSD').textContent=descLabel.length?descLabel.join(' | '):'-'+fmtUSD(0);
-  document.getElementById('tDescCOP').textContent=descUSD>0?'-'+fmtCOP(descUSD):'';
+  document.getElementById('tDescUSD').textContent='-'+fmtUSD(descUSD);
+  document.getElementById('tDescCOP').textContent='-'+fmtCOP(descUSD);
   // Precio antes de IVA
   document.getElementById('tBaseIvaUSD').textContent=fmtUSD(baseUSD);
   document.getElementById('tBaseIvaCOP').textContent=fmtCOP(baseUSD);
@@ -1791,9 +1765,9 @@ function calcMG(){
   document.getElementById('mgDescPct').textContent=desc+'%';
   document.getElementById('mgMargenPct').textContent=margen.toFixed(3)+'%';
   document.getElementById('mgComPct').textContent=comPct.toFixed(3)+'%';
-  document.getElementById('mgComUSD').textContent='EUR '+Math.round(comUSD).toLocaleString('es-CO');
+  document.getElementById('mgComUSD').textContent='USD '+Math.round(comUSD).toLocaleString('es-CO');
   document.getElementById('mgComCOP').textContent='COP '+Math.round(comCOP).toLocaleString('es-CO');
-  document.getElementById('mgBaseUSD').textContent='EUR '+Math.round(baseUSD).toLocaleString('es-CO');
+  document.getElementById('mgBaseUSD').textContent='USD '+Math.round(baseUSD).toLocaleString('es-CO');
   // Color margen
   const color=margen>=40?'var(--green-dark)':margen>=25?'var(--amber)':'var(--red)';
   document.getElementById('mgMargenPct').style.color=color;
@@ -2000,7 +1974,6 @@ async function guardarCotizacion(){
   const garantia='';
   const obs=document.getElementById('obsInput').value.trim();
   const desc=getDescuento();
-  const descAYJpct=parseFloat(document.getElementById('descAYJ')?.value)||0;
   const descEspecial=document.getElementById('descEspecialChk').checked;
   const fleteCOP=0;
   const ivaPct=19;
@@ -2055,7 +2028,7 @@ async function guardarCotizacion(){
     const clienteInfo=clientesData.find(c=>c.titulo.toLowerCase()===cliente.toLowerCase())||{};
     // Generar HTML, subir a SharePoint, luego abrir con link
     const voltaje=getVoltaje();
-    const htmlSinLink=generarPDF({numOferta,idSynergy,cliente,clienteInfo,vendedor,condPago,cuotasPago,garantia,validez,entrega,voltaje,obs,desc,descAYJpct,descEspecial,causalEspecial:getCausalEspecial(),ivaPct,fleteCOP,subUSD,descUSD,ivaUSD,totalUSD,totalCOP,modoCOP,trm,items:[...carrito]},true);
+    const htmlSinLink=generarPDF({numOferta,idSynergy,cliente,clienteInfo,vendedor,condPago,cuotasPago,garantia,validez,entrega,voltaje,obs,desc,descEspecial,causalEspecial:getCausalEspecial(),ivaPct,fleteCOP,subUSD,descUSD,ivaUSD,totalUSD,totalCOP,modoCOP,trm,items:[...carrito]},true);
     const linkPDF=await guardarHTMLEnSharePoint(numOferta, htmlSinLink, cliente, idSynergy);
     // Actualizar LinkPDF en el registro
     if(itemCreado?.id&&linkPDF){
@@ -2065,7 +2038,7 @@ async function guardarCotizacion(){
            body:JSON.stringify({LinkPDF:linkPDF})});
       }catch(ep){console.warn('Error actualizando LinkPDF:',ep);}
     }
-    const htmlFinal=generarPDF({numOferta,idSynergy,cliente,clienteInfo,vendedor,condPago,cuotasPago,garantia,validez,entrega,voltaje,obs,desc,descAYJpct,descEspecial,causalEspecial:getCausalEspecial(),ivaPct,fleteCOP,subUSD,descUSD,ivaUSD,totalUSD,totalCOP,modoCOP,trm,items:[...carrito],linkSharePoint:linkPDF},true);
+    const htmlFinal=generarPDF({numOferta,idSynergy,cliente,clienteInfo,vendedor,condPago,cuotasPago,garantia,validez,entrega,voltaje,obs,desc,descEspecial,causalEspecial:getCausalEspecial(),ivaPct,fleteCOP,subUSD,descUSD,ivaUSD,totalUSD,totalCOP,modoCOP,trm,items:[...carrito],linkSharePoint:linkPDF},true);
     const pdfWin=window.open('','_blank','width=960,height=860');
     if(pdfWin){pdfWin.document.write(htmlFinal);pdfWin.document.close();}
     // Actualizar LinkPDF en la lista
@@ -2087,7 +2060,7 @@ async function guardarCotizacion(){
 
 function generarPDF(d, soloRetornar=false){
   const fecha=new Date().toLocaleDateString('es-CO',{day:'2-digit',month:'long',year:'numeric'});
-  const fUSD=n=>'EUR '+Math.round(n||0).toLocaleString('es-CO');
+  const fUSD=n=>'USD '+Math.round(n||0).toLocaleString('es-CO');
   const fCOP=n=>'COP '+Math.round((n||0)*d.trm).toLocaleString('es-CO');
   const fTRM=n=>'$ '+Math.round(n||0).toLocaleString('es-CO');
   const garantiaTexto=d.garantia||'12 meses o 2.000 horas';
@@ -2200,18 +2173,10 @@ function generarPDF(d, soloRetornar=false){
     +'</div>'
     +'</div>';
 
-  // Calcular descuentos por grupo para el PDF
-  const itemsLicPDF=d.items.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Software');
-  const itemsAYJpdf=d.items.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Servicios AYJ');
-  const subLicPDF=itemsLicPDF.reduce((s,i)=>s+(i.tarifa||0),0);
-  const subAYJpdf=itemsAYJpdf.reduce((s,i)=>s+(i.tarifa||0),0);
-  const descLicPDF=subLicPDF*(d.desc||0)/100;
-  const descAYJpdf=subAYJpdf*(d.descAYJpct||0)/100;
-
-  const descRow=''
-    +((d.desc||0)>0?'<tr><td style="padding:5px 10px;color:#c0392b;border-bottom:1px solid #eee;">Desc. Licencias ('+(d.desc||0)+'%)'+(d.descEspecial?' <span style="font-size:9px;padding:1px 5px;border-radius:10px;background:#FAEEDA;color:#854F0B;">+3% especial</span>':'')+'</td><td style="padding:5px 10px;text-align:right;color:#c0392b;border-bottom:1px solid #eee;">-'+fUSD(descLicPDF)+'<br><span style="font-size:10px;">-'+fCOP(descLicPDF)+'</span></td></tr>':'')
-    +((d.descAYJpct||0)>0?'<tr><td style="padding:5px 10px;color:#C2410C;border-bottom:1px solid #eee;">Desc. Servicios AYJ ('+(d.descAYJpct||0)+'%)</td><td style="padding:5px 10px;text-align:right;color:#C2410C;border-bottom:1px solid #eee;">-'+fUSD(descAYJpdf)+'<br><span style="font-size:10px;">-'+fCOP(descAYJpdf)+'</span></td></tr>':'');
-
+  const descTotalUSD=(d.subUSD||0)*(d.desc||0)/100;
+  const descRow=(d.desc||0)>0
+    ?'<tr><td style="padding:5px 10px;color:#c0392b;border-bottom:1px solid #eee;">Descuento ('+(d.desc||0)+'%)'+(d.descEspecial?' <span style="font-size:9px;padding:1px 5px;border-radius:10px;background:#FAEEDA;color:#854F0B;">+3% especial</span>':'')+'</td><td style="padding:5px 10px;text-align:right;color:#c0392b;border-bottom:1px solid #eee;">-'+fUSD(descTotalUSD)+'<br><span style="font-size:10px;">-'+fCOP(descTotalUSD)+'</span></td></tr>'
+    :'';
   const fleteRow='';
 
   const html='<!DOCTYPE html><html lang="es"><head><meta charset="UTF-8">'
@@ -2730,8 +2695,8 @@ function renderDashboard(){
 
   const kpis=[
     {label:'Total Ofertas',val:total,sub:anio,icon:'ti-file-text',color:'#575756'},
-    {label:'Pipeline Activo',val:'EUR '+Math.round(pipeline).toLocaleString('es-CO'),sub:`${enviadas.length} env. · ${negociacion.length} neg.`,icon:'ti-trending-up',color:'#3B82F6'},
-    {label:'Cerradas Ganadas',val:'EUR '+Math.round(ganadas.reduce((s,d)=>s+d.total,0)).toLocaleString('es-CO'),sub:`${ganadas.length} ofertas`,icon:'ti-trophy',color:'#22C55E'},
+    {label:'Pipeline Activo',val:'USD '+Math.round(pipeline).toLocaleString('es-CO'),sub:`${enviadas.length} env. · ${negociacion.length} neg.`,icon:'ti-trending-up',color:'#3B82F6'},
+    {label:'Cerradas Ganadas',val:'USD '+Math.round(ganadas.reduce((s,d)=>s+d.total,0)).toLocaleString('es-CO'),sub:`${ganadas.length} ofertas`,icon:'ti-trophy',color:'#22C55E'},
     {label:'Tasa de Cierre',val:tasaCierre+'%',sub:`${ganadas.length} gan. / ${cerradas} cerradas`,icon:'ti-target',color:tasaCierre>=50?'#22C55E':'#F59E0B'},
   ];
 
@@ -3076,7 +3041,7 @@ function renderStock(){
     {label:'Referencias',val:totalRef,icon:'ti-box',color:'#575756'},
     {label:'En Stock',val:totalStock+' uds',icon:'ti-check',color:'#22C55E'},
     {label:'En Importación',val:totalImp+' uds',icon:'ti-ship',color:'#3B82F6'},
-    {label:'Valor Stock USD',val:'EUR '+Math.round(valorStock).toLocaleString('es-CO'),icon:'ti-currency-dollar',color:'#80A61B'},
+    {label:'Valor Stock USD',val:'USD '+Math.round(valorStock).toLocaleString('es-CO'),icon:'ti-currency-dollar',color:'#80A61B'},
     {label:'Sin unidades',val:sinStock,icon:'ti-alert-triangle',color:'#EF4444'},
     {label:'Bajo mínimo',val:lista.filter(m=>{const mn=m.stockMinSP||stockMin[m.title]||0;return mn>0&&Math.max(0,mn-(m.stock+m.importacion))>0;}).length,icon:'ti-alert-circle',color:'#F59E0B'},
   ].map(k=>`<div style="background:#fff;border-radius:var(--radius-lg);border:1px solid var(--border);padding:12px;display:flex;gap:10px;align-items:center">
@@ -3404,7 +3369,7 @@ function liqCalc(){
   const margenReal=PVD>0?(PVD-totalCostosUSD)/PVD*100:0;
   const utilidadUSD=PVD-totalCostosUSD;
 
-  const fU=n=>'EUR '+Math.round(n).toLocaleString('es-CO');
+  const fU=n=>'USD '+Math.round(n).toLocaleString('es-CO');
   const fC=n=>'COP '+Math.round(n*TRM).toLocaleString('es-CO');
 
   const fila=(l,u,c)=>`<div class="liq-row"><span>${l}</span><span style="text-align:right"><span style="color:#3B82F6;font-size:11px">${u}</span><br><span style="color:#888;font-size:10px">${c}</span></span></div>`;
@@ -3946,7 +3911,7 @@ function liqImprimir(){
   const comPct=(TABLA_MG[descTotal]||[0,0])[1];
   const comUSD=PVD*comPct/100;
 
-  const fU=n=>'EUR '+Math.round(n).toLocaleString('es-CO');
+  const fU=n=>'USD '+Math.round(n).toLocaleString('es-CO');
   const fC=n=>'COP '+Math.round(n*TRM).toLocaleString('es-CO');
   const fecha=new Date().toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'});
   const asesor=document.getElementById('userChip')?.textContent||'—';
