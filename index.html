@@ -2125,13 +2125,13 @@ function generarPDF(d, soloRetornar=false){
     +'<div style="background:#f9f9f7;border-radius:8px;border:1px solid #e0e0dc;padding:16px 20px;margin-bottom:14px;">'
     +'<table style="width:100%;border-collapse:collapse;font-size:11px;">'
     +'<tr><td colspan="2" style="padding:8px 12px;background:#FEF9EC;border:1px solid #F59E0B;border-radius:6px;color:#92400E;font-weight:700;font-size:12px;margin-bottom:8px;">🚛 Fletes no incluidos en esta oferta. Consultar con el asesor comercial.</td></tr>'
-    +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Tiempo de entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+(d.entrega||'Entrega inmediata')+'</strong></td></tr>'
-    +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Requerimientos</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><a href="https://support.imos3d.com/en/software/system-requirements/system-requirements-ix-2025" style="color:#1D9E75">System Requirements iX 2025 →</a></td></tr>'
+    +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Tiempo de entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+(d.entrega||'A convenir')+'</strong></td></tr>'
+    
     +(d.voltaje?'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Voltaje requerido</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+d.voltaje+'</strong></td></tr>':'')
     +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Entrega digital para descarga online. Licenciamiento web. No se realiza entrega física.</td></tr>'
     +(d.modoCOP?'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>Precio en Pesos Colombianos (COP).</strong> El precio pactado es en moneda local y no está referenciado a dólares ni a la TRM.</td></tr>':'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda / TCE</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Precios en USD. Pagos en COP a la TRM del día del día en que el pago se hace efectivo en las cuentas de AYJ. <strong>TRM de referencia: '+fTRM(d.trm)+' COP/USD.</strong></td></tr>')
     +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Condición de pago</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+d.condPago+'.</strong> Una vez aceptada la oferta y recibidos los anticipos, el COMPRADOR podrá desistir dentro de los 10 días calendario siguientes, perdiendo el 30% del valor total a título de sanción.</td></tr>'
-    +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Instalación</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Instalación, capacitación e implementación se realizan mediante coordinación según los servicios adquiridos.</td></tr>'
+    
 
     +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;">Validez oferta</td><td style="padding:6px 0;color:#444;padding-left:12px;"><strong>'+d.validez+'</strong> a partir de la fecha de emisión.</td></tr>'
     +'</table></div>'
@@ -2151,6 +2151,17 @@ function generarPDF(d, soloRetornar=false){
     +'<strong style="color:#575756;">Aspectos Legales:</strong> Autorizamos a Aristizábal y Jinete S.A.S. para uso comercial de los datos suministrados, bajo Ley 1581 de 2012. '
     +'Consultas: info@ayj.com.co · 601-2688600. El COMPRADOR garantiza que los recursos provienen de actividades lícitas. '
     +'Discrepancias se dirimen en Bogotá D.C., Colombia.'
+    +'</div>'
+    +'<div style="margin-top:16px;background:#f5f7f0;border:1px solid #d8e0c0;border-radius:8px;padding:14px 16px;">'
+    +'<div style="font-size:10px;font-weight:700;color:#575756;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:10px">Datos Bancarios</div>'
+    +'<div style="font-size:11px;color:#444;line-height:2;">'
+    +'<strong>Banco de Bogotá</strong> · Cuenta Corriente No. <strong>095-330239</strong> · Aristizábal y Jinete SAS · NIT 860.079.605-6<br>'
+    +'<strong>Bancolombia</strong> · Cuenta Corriente No. <strong>043 627 135 05</strong> · Aristizábal y Jinete SAS · NIT 860.079.605-6<br>'
+    +'<strong>Link Pagos Online:</strong> <a href="https://portalpagos.davivienda.com/#/comercio/8676/ARISTIZABAL%20Y%20JINETE%20SAS" style="color:#1D9E75">Portal Pagos Davivienda</a>'
+    +'</div>'
+    +'<div style="margin-top:8px;font-size:10px;color:#854F0B;background:#FEF3C7;padding:6px 10px;border-radius:4px;">'
+    +'Una vez realizada la transferencia, favor enviar soporte del pago a <strong>soporte.tecnico@ayj.com.co</strong>, <strong>pagos@ayj.com.co</strong> o al fax: 57.1.2688600 (135)'
+    +'</div>'
     +'</div>'
     +'<div style="margin-top:32px;display:flex;gap:40px;padding-top:16px;border-top:1px solid #e0e0dc;">'
     +'<div style="flex:1;">'
