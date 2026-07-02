@@ -2268,7 +2268,9 @@ function generarPDF(d, soloRetornar=false){
     +'<td style="padding:0 0 0 12px;vertical-align:top;text-align:right;"><a href="https://www.ayj.com.co" target="_blank" style="color:#80A61B;text-decoration:none;font-weight:700;font-size:10px;">www.ayj.com.co</a><br><span style="color:#aaa;font-size:8px;">Lunes a viernes 7:30–12:30 / 13:30–17:00</span>'+(d.idSynergy?'<br><span style="color:#575756;font-size:9px;font-weight:700;">Synergy: '+d.idSynergy+'</span>':'')+'</td>'
     +'</tr></table></div>'
 
-    +condiciones;
+    +condiciones
+    ++'<div style="page-break-before:always;width:100%;margin:0;padding:0;"><img src="https://aristi01ayj.github.io/cotizador-adhesivos/partners.jpg" style="width:100%;height:auto;display:block;"></div>'
+    +'<div style="page-break-before:always;width:100%;margin:0;padding:0;"><img src="https://aristi01ayj.github.io/cotizador-adhesivos/somos.jpg" style="width:100%;height:auto;display:block;"></div>';
   return html;
 }
 async function cargarHistorial(){
