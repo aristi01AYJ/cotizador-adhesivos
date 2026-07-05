@@ -1369,7 +1369,7 @@ function onContactoSeleccionado(){
     if(current.includes('Contacto:')) infoEl.innerHTML=current.replace(/<div[^>]*>.*?Contacto:.*?<\/div>/s, linea);
     else infoEl.innerHTML+=linea;
   }
-  actualizarClienteInfo&&actualizarClienteInfo();
+  }
 }
 
 async function initMsal(){
