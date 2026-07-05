@@ -2549,8 +2549,8 @@ function poblarDatalist(){
 
 function filtrarClienteInput(val){
   // Verificar si se seleccionó un cliente del datalist
-  const match=clientesData.find(c=>(c.titulo||c.empresa||c.nombre||'').toLowerCase()===val.toLowerCase());
-  if(match) onClienteSeleccionado(match.titulo||match.empresa||match.nombre);
+  const matchCli=clientesData.find(c=>(c.titulo||c.empresa||c.nombre||'').toLowerCase()===val.toLowerCase());
+  if(matchCli) onClienteSeleccionado(matchCli.titulo||matchCli.empresa||matchCli.nombre);
   else if(!val) document.getElementById('contactoWrap').style.display='none';
   const match=clientesData.find(c=>c.titulo.toLowerCase()===val.toLowerCase());
   const info=document.getElementById('clienteInfo');
