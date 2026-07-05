@@ -1330,7 +1330,7 @@ async function onClienteSeleccionado(nombreCliente){
       `https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items?expand=fields($select=Title,Cliente,Cargo,Email,Telefono,Activo)&$top=500`,
       {headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
     const contactos=(r.value||[])
-      .filter(i=>i.fields?.Activo!==false&&(i.fields?.Cliente||'').toLowerCase()===nombreCliente.toLowerCase())
+      .filter(i=>(i.fields?.Cliente||'').trim().toLowerCase()===nombreCliente.trim().toLowerCase())
       .map(i=>({
         nombre:(i.fields?.Title||'').trim(),
         cargo:(i.fields?.Cargo||'').trim(),
