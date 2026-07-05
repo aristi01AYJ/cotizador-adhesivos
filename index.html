@@ -316,6 +316,11 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
             <button onclick="abrirModalCliente()" title="Nuevo cliente" style="padding:6px 10px;border:1px solid var(--green);border-radius:var(--radius);background:none;color:var(--green-dark);cursor:pointer;font-size:13px;white-space:nowrap"><i class="ti ti-user-plus"></i></button>
           </div>
           <div id="clienteInfo" style="font-size:11px;color:var(--text2);margin-top:3px;display:none"></div>
+          <div id="contactoWrap" style="display:none;margin-top:4px">
+            <select id="contactoSel" onchange="onContactoSeleccionado()" style="width:100%;font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius);font-family:inherit;color:var(--text)">
+              <option value="">— Seleccionar contacto —</option>
+            </select>
+          </div>
         </div>
         <div class="field-group">
           <label>Vendedor</label>
@@ -1288,6 +1293,84 @@ function calcLiqADH(){
           <div style="font-size:10px;opacity:0.7;margin-top:2px">${(margenTotal*0.15).toFixed(2)}%</div></div>
       </div>
     </div>`;
+}
+
+
+// ══ CONTACTOS ══════════════════════════════════════════
+let listIdContactos='';
+let siteIdComercial='';
+
+async function cargarListaContactos(){
+  if(listIdContactos) return;
+  try{
+    const token=await getToken();
+    const sc=await fetch('https://graph.microsoft.com/v1.0/sites/ayjcsp.sharepoint.com:/sites/comercial',
+      {headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
+    siteIdComercial=sc.id;
+    const lists=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists?$select=id,displayName`,
+      {headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
+    const lc=lists.value.find(l=>l.displayName.toLowerCase()==='contactos');
+    if(lc) listIdContactos=lc.id;
+    console.log('[AYJ] Contactos lista:', listIdContactos?'OK':'no encontrada');
+  }catch(e){console.warn('Contactos:',e.message);}
+}
+
+async function onClienteSeleccionado(nombreCliente){
+  const wrap=document.getElementById('contactoWrap');
+  const sel=document.getElementById('contactoSel');
+  if(!wrap||!sel) return;
+  if(!nombreCliente){wrap.style.display='none';return;}
+  wrap.style.display='block';
+  sel.innerHTML='<option value="">Cargando...</option>';
+  await cargarListaContactos();
+  if(!listIdContactos){sel.innerHTML='<option value="">— Sin contactos —</option>';return;}
+  try{
+    const token=await getToken();
+    const filter=encodeURIComponent(`fields/Cliente eq '${nombreCliente}'`);
+    const r=await fetch(
+      `https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items?expand=fields($select=Title,Cliente,Cargo,Email,Telefono,Activo)&$filter=${filter}&$top=50`,
+      {headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
+    const contactos=(r.value||[])
+      .filter(i=>i.fields?.Activo!==false)
+      .map(i=>({
+        nombre:(i.fields?.Title||'').trim(),
+        cargo:(i.fields?.Cargo||'').trim(),
+        email:(i.fields?.Email||'').trim(),
+        telefono:(i.fields?.Telefono||'').trim(),
+      })).filter(c=>c.nombre);
+    sel._contactos=contactos;
+    if(!contactos.length){sel.innerHTML='<option value="">— Sin contactos registrados —</option>';return;}
+    sel.innerHTML='<option value="">— Seleccionar contacto —</option>'
+      +contactos.map((c,i)=>`<option value="${i}">${c.nombre}${c.cargo?' · '+c.cargo:''}</option>`).join('');
+    if(contactos.length===1){sel.value='0';onContactoSeleccionado();}
+  }catch(e){sel.innerHTML='<option value="">Error: '+e.message+'</option>';}
+}
+
+function onContactoSeleccionado(){
+  const sel=document.getElementById('contactoSel');
+  if(!sel||sel.value==='') return;
+  const c=sel._contactos?.[parseInt(sel.value)];
+  if(!c) return;
+  // Rellenar campos de clienteInfo si existen
+  const emailEl=document.getElementById('clienteEmail');
+  const telEl=document.getElementById('clienteTel');
+  const cargoEl=document.getElementById('clienteCargo');
+  if(emailEl) emailEl.value=c.email;
+  if(telEl) telEl.value=c.telefono;
+  if(cargoEl) cargoEl.value=c.cargo;
+  // Actualizar el clienteInfo display
+  const infoEl=document.getElementById('clienteInfo');
+  if(infoEl&&c.nombre){
+    const current=infoEl.innerHTML;
+    // Inyectar contacto seleccionado en el info
+    const linea=`<div style="margin-top:2px"><strong>Contacto:</strong> ${c.nombre}${c.cargo?' · '+c.cargo:''}</div>`
+      +(c.email?`<div>${c.email}</div>`:'')
+      +(c.telefono?`<div>${c.telefono}</div>`:'');
+    // Reemplazar si ya hay una línea de contacto
+    if(current.includes('Contacto:')) infoEl.innerHTML=current.replace(/<div[^>]*>.*?Contacto:.*?<\/div>/s, linea);
+    else infoEl.innerHTML+=linea;
+  }
+  actualizarClienteInfo&&actualizarClienteInfo();
 }
 
 async function initMsal(){
@@ -2465,6 +2548,10 @@ function poblarDatalist(){
 }
 
 function filtrarClienteInput(val){
+  // Verificar si se seleccionó un cliente del datalist
+  const match=clientesData.find(c=>(c.titulo||c.empresa||c.nombre||'').toLowerCase()===val.toLowerCase());
+  if(match) onClienteSeleccionado(match.titulo||match.empresa||match.nombre);
+  else if(!val) document.getElementById('contactoWrap').style.display='none';
   const match=clientesData.find(c=>c.titulo.toLowerCase()===val.toLowerCase());
   const info=document.getElementById('clienteInfo');
   if(match&&val){
