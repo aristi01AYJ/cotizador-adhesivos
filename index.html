@@ -1326,12 +1326,11 @@ async function onClienteSeleccionado(nombreCliente){
   if(!listIdContactos){sel.innerHTML='<option value="">— Sin contactos —</option>';return;}
   try{
     const token=await getToken();
-    const filter=encodeURIComponent(`fields/Cliente eq '${nombreCliente}'`);
     const r=await fetch(
-      `https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items?expand=fields($select=Title,Cliente,Cargo,Email,Telefono,Activo)&$filter=${filter}&$top=50`,
+      `https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items?expand=fields($select=Title,Cliente,Cargo,Email,Telefono,Activo)&$top=500`,
       {headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
     const contactos=(r.value||[])
-      .filter(i=>i.fields?.Activo!==false)
+      .filter(i=>i.fields?.Activo!==false&&(i.fields?.Cliente||'').toLowerCase()===nombreCliente.toLowerCase())
       .map(i=>({
         nombre:(i.fields?.Title||'').trim(),
         cargo:(i.fields?.Cargo||'').trim(),
