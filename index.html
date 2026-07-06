@@ -1527,13 +1527,7 @@ function renderCarrito(){
   carrito.forEach((item,i)=>{
     const pdfCell=item.fichaTecnica?`<a class="btn-pdf" href="${item.fichaTecnica}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--red);white-space:nowrap;"><i class="ti ti-file-type-pdf" style="font-size:14px"></i> Ver Ficha Técnica</a>`:'';
     const ytCell=item.ytVideo?`<a class="btn-pdf" href="${item.ytVideo}" target="_blank" title="Ver video en YouTube" style="color:#FF0000"><i class="ti ti-brand-youtube"></i></a>`:'';
-    const badge=item.tipo==='stock'&&item.stockCount===1
-      ?'<span class="item-tipo-badge" style="background:#FEE2E2;color:#991B1B;font-weight:700">🔥 Disponible</span>'
-      :item.tipo==='stock'
-        ?'<span class="item-tipo-badge stock">✅ En Stock</span>'
-        :item.tipo==='importacion'
-          ?'<span class="item-tipo-badge importacion">🚢 En Importación</span>'
-          :'<span class="item-tipo-badge pedido">📦 Bajo Pedido</span>';
+    const badge='<span class="item-tipo-badge stock">✅ Disponible</span>';
     const precioUnit=item.tarifa/(item.cantidad||1);
     const tr=document.createElement('tr');
     tr.innerHTML=`<td style="color:var(--text3);font-size:12px">${i+1}</td>`
@@ -2014,7 +2008,7 @@ function generarPDF(d, soloRetornar=false){
 
   function buildFilasPDF(items_grupo, idx_start=0){return items_grupo.map((item,idx)=>{
     const idxGlobal=idx_start+idx;
-    const licBadgeHTML=getLicBadge(item.tipoLicencia,item.licenciamiento,item.marca);
+    const licBadgeHTML=''; // ADH: sin badge de licencia
     const marcaLabel=(item.marca||'').toUpperCase()==='AYJ'?'AYJ — Servicio prestado por AYJ':(item.marca||'');
     return '<tr>'
       +'<td style="padding:8px 10px;border-bottom:1px solid #ececec;font-size:11px;color:#999;text-align:center;">'+(idxGlobal+1)+'</td>'
