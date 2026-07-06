@@ -364,8 +364,9 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
         <div class="field-group" style="margin:0">
           <label style="font-size:10px">Tiempo de entrega</label>
           <select id="entregaSel" onchange="onEntregaChange(this.value)" style="font-size:12px;padding:4px 6px;border:1px solid var(--border);border-radius:var(--radius);font-family:inherit">
-            <option value="Entrega inmediata">Entrega inmediata</option>
-            <option value="Entrega en 15 días hábiles">Entrega en 15 días hábiles</option>
+            <option value="A convenir con el cliente" selected>🤝 A convenir con el cliente</option>
+            <option value="Entrega inmediata">⚡ Entrega inmediata</option>
+            <option value="Entrega en 15 días hábiles">📅 Entrega en 15 días hábiles</option>
             <option value="__custom_entrega__">✏️ Personalizar...</option>
           </select>
           <div id="entregaLabel" style="font-size:10px;color:var(--text2);margin-top:2px;display:none"></div>
@@ -2072,7 +2073,7 @@ function generarPDF(d, soloRetornar=false){
     +'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Tiempo de entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+(d.entrega||'A convenir')+'</strong></td></tr>'
     
     +(d.voltaje?'<tr><td style="padding:6px 0;color:#575756;width:150px;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Voltaje requerido</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+d.voltaje+'</strong></td></tr>':'')
-    +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Entrega digital para descarga online. Licenciamiento web. No se realiza entrega física.</td></tr>'
+    +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Entrega</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+(d.entrega||'A convenir con el cliente')+'</strong></td></tr>'
     +(d.modoCOP?'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>Precio en Pesos Colombianos (COP).</strong> El precio pactado es en moneda local y no está referenciado a dólares ni a la TRM.</td></tr>':'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Moneda / TCE</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;">Precios en USD. Pagos en COP a la TRM del día del día en que el pago se hace efectivo en las cuentas de AYJ. <strong>TRM de referencia: '+fTRM(d.trm)+' COP/USD.</strong></td></tr>')
     +'<tr><td style="padding:6px 0;color:#575756;vertical-align:top;font-weight:700;border-bottom:1px solid #eee;">Condición de pago</td><td style="padding:6px 0;color:#444;border-bottom:1px solid #eee;padding-left:12px;"><strong>'+d.condPago+'.</strong> Una vez aceptada la oferta y recibidos los anticipos, el COMPRADOR podrá desistir dentro de los 10 días calendario siguientes, perdiendo el 30% del valor total a título de sanción.</td></tr>'
     
@@ -2082,14 +2083,8 @@ function generarPDF(d, soloRetornar=false){
     +'<div style="background:#fff;border-radius:8px;border:1px solid #e0e0dc;padding:14px 20px;margin-bottom:14px;">'
     +'<div style="font-size:10px;font-weight:700;color:#575756;text-transform:uppercase;letter-spacing:0.5px;margin-bottom:8px;">Exclusiones</div>'
     +'<div style="font-size:11px;color:#555;line-height:1.8;">'
-    
-    +'· Hardware, estaciones de trabajo o servidores.<br>'
-    +'· Licencias de otros programas no especificados (Windows, Antivirus, etc.).<br>'
-    +'· Conexiones de red, configuraciones de Firewall o infraestructura de red.<br>'
-    +'· Recapacitaciones por salida de personal o cambios de usuarios.<br>'
-    +'· Reinstalaciones por causas ajenas al software.<br>'
-    +'· Soluciones de backup de datos maestros y configuraciones del cliente.<br>'
-    +'· Todo lo demás que no figure expresamente en esta oferta.'
+    +'· Fletes no incluidos, a menos que se llegue a un acuerdo especial.<br>'
+    +'· Servicio de instalación y pruebas del adhesivo.'
     +'</div></div>'
     +'<div style="background:#fff;border-radius:8px;border:1px solid #e0e0dc;padding:14px 20px;font-size:10px;color:#777;line-height:1.7;">'
     +'<strong style="color:#575756;">Aspectos Legales:</strong> Autorizamos a Aristizábal y Jinete S.A.S. para uso comercial de los datos suministrados, bajo Ley 1581 de 2012. '
