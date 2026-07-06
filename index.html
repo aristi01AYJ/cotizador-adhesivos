@@ -1898,7 +1898,7 @@ async function generarNumOferta(){
 // ADH: todos los items son un solo grupo
 function getGrupoItem(tipologia, marca){ return 'Productos'; }
 
-
+async function guardarCotizacion(){
   const cliente=document.getElementById('clienteInput').value.trim();
   const vendedor=currentUserName;
   // Validar causal descuento especial
