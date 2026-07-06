@@ -2590,47 +2590,6 @@ function filtrarClienteInput(val){
   } else { info.style.display='none'; }
 }
 
-function renderTablaClientes(){
-  const q=(document.getElementById('clientesBuscador')?.value||'').toLowerCase();
-  const ciudad=(document.getElementById('clientesFiltCiudad')?.value||'').toLowerCase();
-  const orden=document.getElementById('clientesOrden')?.value||'az';
-  let lista=clientesData.filter(c=>
-    (!q||(c.titulo.toLowerCase().includes(q)||c.nombre.toLowerCase().includes(q)||
-    c.ciudad.toLowerCase().includes(q)||c.email.toLowerCase().includes(q)))
-    &&(!ciudad||c.ciudad.toLowerCase()===ciudad)
-  );
-  if(orden==='nombre') lista=[...lista].sort((a,b)=>a.titulo.localeCompare(b.titulo,'es'));
-  else if(orden==='ciudad') lista=[...lista].sort((a,b)=>(a.ciudad||'').localeCompare(b.ciudad||'','es'));
-  else if(orden==='contacto') lista=[...lista].sort((a,b)=>(a.nombre||'').localeCompare(b.nombre||'','es'));
-  _listaFiltradaClientes=lista;
-  const wrap=document.getElementById('clientesTablaWrap');
-  if(!wrap)return;
-  if(!lista.length){wrap.innerHTML='<div class="loading-list">Sin clientes que coincidan</div>';return;}
-  wrap.innerHTML=`<table class="cli-table">
-    <thead><tr><th>Razón Social</th><th>Contacto</th><th>Email</th><th>Teléfono</th><th>Ciudad</th><th>NIT/RUT</th><th></th></tr></thead>
-    <tbody>${lista.map((c,idx)=>`<tr>
-      <td><strong>${c.titulo}</strong></td>
-      <td>${c.nombre||'—'}</td>
-      <td style="font-size:12px">${c.email||'—'}</td>
-      <td style="font-size:12px">${c.telefono||'—'}</td>
-      <td>${c.ciudad||'—'}</td>
-      <td style="font-size:12px">${c.nit||'—'}</td>
-      <td>
-        <div style="display:flex;gap:6px">
-          <button class="btn-cli-usar" onclick="usarClienteIdx(${idx})">
-            <i class="ti ti-arrow-right"></i> Usar
-          </button>
-          <button class="btn-cli-usar" style="border-color:var(--blue);color:var(--blue-dark)" onclick="editarClienteIdx(${idx})">
-            <i class="ti ti-pencil"></i>
-          </button>
-          <button class="btn-cli-usar" style="border-color:#EF4444;color:#EF4444" onclick="eliminarClienteIdx(${idx})" title="Eliminar cliente">
-            <i class="ti ti-trash"></i>
-          </button>
-        </div>
-      </td>
-    </tr>`).join('')}</tbody>
-  </table>`;
-}
 
 async function eliminarClienteIdx(idx){
   const c=_listaFiltradaClientes[idx];
