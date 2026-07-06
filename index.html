@@ -1895,7 +1895,10 @@ async function generarNumOferta(){
   document.getElementById('ofertaNum').textContent='COT-2026-'+String(cotNum).padStart(3,'0');
 }
 
-async function guardarCotizacion(){
+// ADH: todos los items son un solo grupo
+function getGrupoItem(tipologia, marca){ return 'Productos'; }
+
+
   const cliente=document.getElementById('clienteInput').value.trim();
   const vendedor=currentUserName;
   // Validar causal descuento especial
@@ -2004,9 +2007,7 @@ function generarPDF(d, soloRetornar=false){
 
   // Agrupar items por tipo
   const grupos_pdf={
-    'Software': d.items.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Software'),
-    'Servicios imos': d.items.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Servicios imos'),
-    'Servicios AYJ': d.items.filter(i=>getGrupoItem(i.tipologia,i.marca)==='Servicios AYJ'),
+    'Productos': d.items,
   };
   const grupos_activos=Object.entries(grupos_pdf).filter(([,items])=>items.length>0);
   const tieneGrupos=grupos_activos.length>1;
