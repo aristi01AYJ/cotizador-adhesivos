@@ -2848,6 +2848,7 @@ async function guardarCliente(){
 let _contactosMapa = {}; // mapa por key para editar
 
 async function seleccionarClienteDetalle(idx){
+  console.log('[ADH] seleccionarClienteDetalle idx:', idx, '_listaFiltradaClientes.length:', _listaFiltradaClientes?.length);
   _clienteSelIdx = idx;
   document.querySelectorAll('[id^="cliRow_"]').forEach(el=>{
     el.style.background = el.id===`cliRow_${idx}` ? '#EDF7E3' : '#fff';
