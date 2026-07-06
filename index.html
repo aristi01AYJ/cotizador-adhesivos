@@ -1246,6 +1246,9 @@ async function showApp(account){
   document.getElementById('vendedorChip').textContent=currentUserName;
   await resolverSite();
   await Promise.all([cargarMaquinas(),cargarClientes(true),cargarTRM()]);
+  // ADH: siempre en COP
+  const copChk=document.getElementById('modoCOPChk');
+  if(copChk&&!copChk.checked){copChk.checked=true;if(typeof toggleModoCOP==='function')toggleModoCOP(true);}
   generarNumOferta();
 }
 
@@ -1385,10 +1388,11 @@ async function cargarTRM(){
     if(r.ok){
       const data=await r.json();
       if(data.length>0&&data[0].valor){
-        const trmHoy=Math.round(parseFloat(data[0].valor));
+        const trmBase=Math.round(parseFloat(data[0].valor));
+        const trmHoy=Math.round(trmBase*1.15);
         trm=trmHoy;
         document.getElementById('trmInput').value=trmHoy;
-        document.getElementById('trmLabel').textContent='$ '+trmHoy.toLocaleString('es-CO')+' COP/USD · Banco República';
+        document.getElementById('trmLabel').textContent='$ '+trmHoy.toLocaleString('es-CO')+' COP/USD · BanRep +15%';
         return;
       }
     }
@@ -1442,7 +1446,7 @@ function renderCatalogo(){
   if(!el.querySelector('.grupo-card')&&!el.querySelector('.bp-card'))el.innerHTML='<div class="loading-list">Sin resultados</div>';
 }
 
-function fmtUSD(n){return 'USD '+Math.round(n).toLocaleString('es-CO');}
+function fmtUSD(n){return '$ '+Math.round(n).toLocaleString('es-CO');}
 function fmtCOP(n){return 'COP '+Math.round(n*trm).toLocaleString('es-CO');}
 
 function buildGrupoCard(g){
@@ -1524,7 +1528,7 @@ function renderCarrito(){
     const pdfCell=item.fichaTecnica?`<a class="btn-pdf" href="${item.fichaTecnica}" target="_blank" style="display:inline-flex;align-items:center;gap:4px;font-size:11px;color:var(--red);white-space:nowrap;"><i class="ti ti-file-type-pdf" style="font-size:14px"></i> Ver Ficha Técnica</a>`:'';
     const ytCell=item.ytVideo?`<a class="btn-pdf" href="${item.ytVideo}" target="_blank" title="Ver video en YouTube" style="color:#FF0000"><i class="ti ti-brand-youtube"></i></a>`:'';
     const badge=item.tipo==='stock'&&item.stockCount===1
-      ?'<span class="item-tipo-badge" style="background:#FEE2E2;color:#991B1B;font-weight:700">🔥 ÚLTIMA UNIDAD</span>'
+      ?'<span class="item-tipo-badge" style="background:#FEE2E2;color:#991B1B;font-weight:700">🔥 Disponible</span>'
       :item.tipo==='stock'
         ?'<span class="item-tipo-badge stock">✅ En Stock</span>'
         :item.tipo==='importacion'
