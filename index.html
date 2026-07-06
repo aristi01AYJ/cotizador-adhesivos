@@ -2647,9 +2647,50 @@ async function eliminarClienteIdx(idx){
   }catch(e){showToast('Error al eliminar: '+e.message,'error');}
 }
 
-function usarClienteIdx(idx){
+async function usarClienteIdx(idx){
   const c=_listaFiltradaClientes[idx];
-  if(c) usarCliente(c.titulo,c.nombre,c.ciudad,c.telefono);
+  if(!c) return;
+
+  // Primero cambiar a vista nueva para que el DOM esté listo
+  switchView('nueva');
+
+  // Rellenar cliente
+  document.getElementById('clienteInput').value=c.titulo;
+  const info=document.getElementById('clienteInfo');
+  info.style.display='block';
+
+  // Cargar contactos
+  await cargarListaContactos();
+  const contactos=await cargarContactosPorCliente(c.titulo);
+
+  let contacto=null;
+  if(contactos.length===1){
+    contacto=contactos[0];
+  } else if(contactos.length>1){
+    const opciones=contactos.map((ct,i)=>`${i+1}. ${ct.nombre}${ct.cargo?' · '+ct.cargo:''}`).join('\n');
+    const selNum=prompt(`${c.titulo} tiene ${contactos.length} contactos:\n${opciones}\n\nIngresa el número del contacto:`);
+    const num=parseInt(selNum);
+    if(num>=1&&num<=contactos.length) contacto=contactos[num-1];
+  }
+
+  // Mostrar info y poblar dropdown
+  let infoText=c.ciudad||'';
+  const wrap=document.getElementById('contactoWrap');
+  const selEl=document.getElementById('contactoSel');
+
+  if(contactos.length>0&&wrap&&selEl){
+    wrap.style.display='block';
+    selEl.innerHTML=contactos.map((ct,i)=>`<option value="${i}">${ct.nombre}${ct.cargo?' · '+ct.cargo:''}</option>`).join('');
+    selEl._contactos=contactos;
+    if(contacto){
+      const selIdx=contactos.findIndex(ct=>ct.nombre===contacto.nombre);
+      if(selIdx>=0) selEl.value=String(selIdx);
+      infoText=`${contacto.nombre}${contacto.cargo?' · '+contacto.cargo:''}${c.ciudad?' · '+c.ciudad:''}`;
+    }
+  }
+
+  info.textContent=infoText||c.titulo;
+  showToast('Cliente: '+c.titulo+(contacto?' · '+contacto.nombre:''),'success');
 }
 function editarClienteIdx(idx){
   const c=_listaFiltradaClientes[idx];
@@ -2666,6 +2707,35 @@ function usarCliente(titulo,nombre,ciudad,telefono){
 }
 
 let clienteEditandoId=null;
+function mcAgregarContacto(datos={}){
+  const wrap = document.getElementById('mcContactosWrap');
+  const idx = mcContactosCount++;
+  const div = document.createElement('div');
+  div.id = `mcContacto_${idx}`;
+  div.style.cssText = 'background:#fff;border-radius:var(--radius);padding:10px 12px;margin-bottom:8px;border:1px solid #BFDBFE;position:relative';
+  div.innerHTML = `
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="field-group" style="grid-column:1/-1;margin:0">
+        <label style="font-size:10px">Nombre *</label>
+        <input type="text" id="mc_cont_nombre_${idx}" placeholder="Nombre completo..." value="${datos.nombre||''}" style="width:100%">
+      </div>
+      <div class="field-group" style="margin:0">
+        <label style="font-size:10px">Cargo</label>
+        <input type="text" id="mc_cont_cargo_${idx}" placeholder="Gerente, Jefe..." value="${datos.cargo||''}">
+      </div>
+      <div class="field-group" style="margin:0">
+        <label style="font-size:10px">Teléfono</label>
+        <input type="text" id="mc_cont_tel_${idx}" placeholder="300 123 4567" value="${datos.telefono||''}">
+      </div>
+      <div class="field-group" style="grid-column:1/-1;margin:0">
+        <label style="font-size:10px">Email</label>
+        <input type="email" id="mc_cont_email_${idx}" placeholder="correo@empresa.com" value="${datos.email||''}" style="width:100%">
+      </div>
+    </div>
+    ${idx>0?`<button onclick="document.getElementById('mcContacto_${idx}').remove()" style="position:absolute;top:6px;right:8px;background:none;border:none;cursor:pointer;color:#888;font-size:14px">×</button>`:''}
+  `;
+  wrap.appendChild(div);
+}
 function abrirModalCliente(){
   clienteEditandoId=null;
   ['mc_titulo','mc_nombre','mc_email','mc_telefono','mc_ciudad','mc_nit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
@@ -2677,14 +2747,393 @@ function abrirModalCliente(){
 function editarCliente(c){
   clienteEditandoId=c.id;
   document.getElementById('mc_titulo').value=c.titulo||'';
-  document.getElementById('mc_nombre').value=c.nombre||'';
-  document.getElementById('mc_email').value=c.email||'';
-  document.getElementById('mc_telefono').value=c.telefono||'';
   document.getElementById('mc_ciudad').value=c.ciudad||'';
   document.getElementById('mc_pais').value=c.pais||'Colombia';
   document.getElementById('mc_nit').value=c.nit||'';
+  document.getElementById('mcContactosWrap').innerHTML='';
+  mcContactosCount=0;
+  mcAgregarContacto(); // campo vacío para agregar nuevo si quiere
   document.getElementById('modalClienteTitulo').textContent='Editar Cliente';
-  document.getElementById('btnGuardarCliente').innerHTML='<i class="ti ti-check"></i> Actualizar Cliente';
+  document.getElementById('btnGuardarCliente').innerHTML='<i class="ti ti-check"></i> Actualizar';
+  document.getElementById('modalCliente').style.display='flex';
+}
+function cerrarModalCliente(){document.getElementById('modalCliente').style.display='none';}
+
+async function guardarCliente(){
+  const titulo=document.getElementById('mc_titulo').value.trim();
+  if(!titulo){showToast('La razón social es obligatoria','error');return;}
+  if(!listIdClientes){showToast('Lista Clientes no encontrada','error');return;}
+
+  // Verificar duplicado solo en modo nuevo
+  if(!clienteEditandoId){
+    const existe=clientesData.find(c=>c.titulo.toLowerCase()===titulo.toLowerCase());
+    if(existe){
+      const usar=confirm(`Ya existe un cliente con ese nombre:\n"${existe.titulo}"\n\n¿Deseas usarlo en la oferta actual en lugar de crear uno nuevo?`);
+      if(usar){cerrarModalCliente();usarCliente(existe.titulo,'',existe.ciudad,existe.telefono);}
+      return;
+    }
+  }
+
+  // Recopilar contactos del modal
+  const contactos=[];
+  document.querySelectorAll('[id^="mc_cont_nombre_"]').forEach(el=>{
+    const idx=el.id.replace('mc_cont_nombre_','');
+    const nombre=el.value.trim();
+    if(nombre) contactos.push({
+      nombre,
+      cargo:document.getElementById(`mc_cont_cargo_${idx}`)?.value.trim()||'',
+      email:document.getElementById(`mc_cont_email_${idx}`)?.value.trim()||'',
+      telefono:document.getElementById(`mc_cont_tel_${idx}`)?.value.trim()||'',
+    });
+  });
+
+  const btn=document.getElementById('btnGuardarCliente');
+  btn.disabled=true;btn.innerHTML='<span class="spinner"></span> Guardando...';
+
+  const fields={
+    Title:titulo,
+    Ciudad:document.getElementById('mc_ciudad').value.trim(),
+    Pais:document.getElementById('mc_pais').value.trim(),
+    Asesor:currentUserName,
+  };
+  const nit=document.getElementById('mc_nit')?.value.trim();
+  if(nit) fields.NIT=nit;
+
+  try{
+    const token=await getToken();
+    if(clienteEditandoId){
+      await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listIdClientes}/items/${clienteEditandoId}/fields`,{
+        method:'PATCH',headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},body:JSON.stringify(fields)
+      });
+      showToast('✓ Cliente actualizado','success');
+    } else {
+      await graphPost(`/sites/${siteId}/lists/${listIdClientes}/items`,{fields});
+      // Guardar contactos en lista Contactos
+      if(contactos.length>0){
+        await cargarListaContactos();
+        if(listIdContactos){
+          for(const c of contactos){
+            try{
+              await fetch(`https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items`,{
+                method:'POST',
+                headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+                body:JSON.stringify({fields:{Title:c.nombre,Cliente:titulo,Cargo:c.cargo,Email:c.email,Telefono:c.telefono,Activo:true}})
+              });
+            }catch(e){console.warn('Error guardando contacto:',e.message);}
+          }
+          showToast(`✓ Cliente + ${contactos.length} contacto(s) guardados`,'success');
+        } else {
+          showToast('✓ Cliente guardado (lista Contactos no encontrada)','success');
+        }
+      } else {
+        showToast('✓ Cliente guardado: '+titulo,'success');
+      }
+    }
+    cerrarModalCliente();
+    await cargarClientes(true);
+    if(!clienteEditandoId){
+      const primerContacto=contactos[0];
+      usarCliente(titulo, primerContacto?.nombre||'', fields.Ciudad||'', primerContacto?.telefono||'');
+      if(primerContacto) onClienteSeleccionado(titulo);
+    }
+  }catch(e){showToast('Error: '+e.message,'error');}
+  finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';}
+}
+
+let _contactosMapa = {}; // mapa por key para editar
+
+async function seleccionarClienteDetalle(idx){
+  _clienteSelIdx = idx;
+  document.querySelectorAll('[id^="cliRow_"]').forEach(el=>{
+    el.style.background = el.id===`cliRow_${idx}` ? '#EDF7E3' : '#fff';
+  });
+  const c = _listaFiltradaClientes[idx];
+  if(!c) return;
+  const panel = document.getElementById('clienteDetallePanel');
+  panel.innerHTML = `<div class="loading-list"><span class="spinner dark"></span> Cargando contactos...</div>`;
+
+  await cargarListaContactos();
+  const contactos = await cargarContactosPorCliente(c.titulo);
+  _contactosMapa = {};
+  contactos.forEach((ct,i)=>{ _contactosMapa[i]=ct; });
+
+  panel.innerHTML = `
+    <div style="max-width:600px">
+      <div style="background:#fff;border-radius:var(--radius-lg);border:1px solid var(--border);padding:16px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start">
+          <div>
+            <div style="font-size:16px;font-weight:700;color:var(--text)">${c.titulo}</div>
+            <div style="font-size:12px;color:var(--text2);margin-top:4px">${[c.ciudad,c.pais].filter(Boolean).join(' · ')}${c.nit?' · NIT: '+c.nit:''}</div>
+          </div>
+          <div style="display:flex;gap:6px">
+            <button onclick="editarClienteIdx(${idx})" class="btn-sec" style="padding:5px 10px;font-size:12px"><i class="ti ti-pencil"></i></button>
+            <button onclick="eliminarClienteIdx(${idx})" class="btn-sec" style="padding:5px 10px;font-size:12px;border-color:#EF4444;color:#EF4444"><i class="ti ti-trash"></i></button>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">👤 Contactos <span style="font-size:11px;color:var(--text2);font-weight:400">(${contactos.length})</span></div>
+        <button onclick="abrirModalNuevoContacto('${c.titulo.replace(/'/g,"\\'")}',${idx})" class="btn-primary" style="padding:5px 12px;font-size:12px"><i class="ti ti-user-plus"></i> Agregar</button>
+      </div>
+      <div id="contactosDetalleWrap">
+        ${contactos.length ? contactos.map((ct,ci)=>`
+          <div style="background:#fff;border-radius:var(--radius);border:1px solid var(--border);padding:12px 14px;margin-bottom:8px;display:flex;justify-content:space-between;align-items:flex-start">
+            <div>
+              <div style="font-weight:600;font-size:13px">${ct.nombre}</div>
+              ${ct.cargo?`<div style="font-size:11px;color:var(--text2);margin-top:2px">${ct.cargo}</div>`:''}
+              ${ct.email?`<div style="font-size:11px;color:var(--green-dark);margin-top:2px">${ct.email}</div>`:''}
+              ${ct.telefono?`<div style="font-size:11px;color:var(--text2)">${ct.telefono}</div>`:''}
+            </div>
+            <div style="display:flex;gap:6px;flex-shrink:0;margin-left:10px">
+              <button onclick="usarContactoIdx(${ci},'${c.titulo.replace(/'/g,"\\'")}')" class="btn-primary" style="padding:4px 10px;font-size:11px"><i class="ti ti-arrow-right"></i> Usar</button>
+              <button onclick="editarContactoIdx(${ci},'${c.titulo.replace(/'/g,"\\'")}')" class="btn-sec" style="padding:4px 8px;font-size:11px"><i class="ti ti-pencil"></i></button>
+              <button onclick="eliminarContactoIdx(${ci},'${c.titulo.replace(/'/g,"\\'")}')" class="btn-sec" style="padding:4px 8px;font-size:11px;border-color:#EF4444;color:#EF4444"><i class="ti ti-trash"></i></button>
+            </div>
+          </div>`).join('')
+        : '<div style="color:var(--text3);font-size:13px;padding:20px;text-align:center">Sin contactos registrados</div>'}
+      </div>
+    </div>`;
+}
+
+async function editarContactoIdx(ci, nombreCliente){
+  const ct = _contactosMapa[ci];
+  if(!ct) return;
+  const nombre=prompt('Nombre:',ct.nombre);
+  if(!nombre?.trim()) return;
+  const cargo=prompt('Cargo:',ct.cargo)||'';
+  const email=prompt('Email:',ct.email)||'';
+  const telefono=prompt('Teléfono:',ct.telefono)||'';
+  await cargarListaContactos();
+  try{
+    const token=await getToken();
+    await fetch(`https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items/${ct.id}/fields`,{
+      method:'PATCH',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({Title:nombre.trim(),Cargo:cargo,Email:email,Telefono:telefono})
+    });
+    showToast('✓ Contacto actualizado','success');
+    seleccionarClienteDetalle(_clienteSelIdx);
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+
+async function eliminarContactoIdx(ci, nombreCliente){
+  const ct = _contactosMapa[ci];
+  if(!ct||!confirm(`¿Eliminar contacto "${ct.nombre}"?`)) return;
+  await cargarListaContactos();
+  try{
+    const token=await getToken();
+    await fetch(`https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items/${ct.id}`,{
+      method:'DELETE',headers:{Authorization:'Bearer '+token}
+    });
+    showToast('✓ Contacto eliminado','success');
+    seleccionarClienteDetalle(_clienteSelIdx);
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+
+async function cargarContactosPorCliente(nombreCliente){
+  if(!listIdContactos) return [];
+  try{
+    const token=await getToken();
+    const r=await fetch(
+      `https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items?expand=fields($select=Title,Cliente,Cargo,Email,Telefono,Activo)&$top=500`,
+      {headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
+    return (r.value||[])
+      .filter(i=>(i.fields?.Cliente||'').trim().toLowerCase()===nombreCliente.trim().toLowerCase())
+      .map(i=>({
+        id:i.id,
+        nombre:(i.fields?.Title||'').trim(),
+        cargo:(i.fields?.Cargo||'').trim(),
+        email:(i.fields?.Email||'').trim(),
+        telefono:(i.fields?.Telefono||'').trim(),
+      })).filter(c=>c.nombre);
+  }catch(e){return [];}
+}
+
+function abrirModalNuevoContacto(nombreCliente, clienteIdx){
+  // Abrir modal de contacto con cliente pre-llenado
+  document.getElementById('modalContactoClienteNombre').textContent = nombreCliente;
+  document.getElementById('modalContactoClienteIdx').value = clienteIdx;
+  document.getElementById('mc_cont_nombre_new').value = '';
+  document.getElementById('mc_cont_cargo_new').value = '';
+  document.getElementById('mc_cont_email_new').value = '';
+  document.getElementById('mc_cont_tel_new').value = '';
+  document.getElementById('modalNuevoContacto').style.display = 'flex';
+  setTimeout(()=>document.getElementById('mc_cont_nombre_new')?.focus(),100);
+}
+
+async function guardarNuevoContactoModal(){
+  const nombre=document.getElementById('mc_cont_nombre_new')?.value.trim();
+  if(!nombre){showToast('El nombre es obligatorio','error');return;}
+  const nombreCliente=document.getElementById('modalContactoClienteNombre')?.textContent||'';
+  const clienteIdx=parseInt(document.getElementById('modalContactoClienteIdx')?.value||'-1');
+  const datos={
+    nombre,
+    cargo:document.getElementById('mc_cont_cargo_new')?.value.trim()||'',
+    email:document.getElementById('mc_cont_email_new')?.value.trim()||'',
+    telefono:document.getElementById('mc_cont_tel_new')?.value.trim()||'',
+  };
+  document.getElementById('modalNuevoContacto').style.display='none';
+  await _guardarNuevoContacto(nombreCliente, datos, clienteIdx);
+}
+
+
+async function _guardarNuevoContacto(nombreCliente, datos, clienteIdx){
+  await cargarListaContactos();
+  console.log('[AYJ] Guardando contacto para:', nombreCliente, 'lista:', listIdContactos);
+  if(!listIdContactos){showToast('Lista Contactos no encontrada — recarga la página','error');return;}
+  try{
+    const token=await getToken();
+    // Primero consultar el nombre interno del campo Cliente
+    // Campo Cliente es Lookup — necesita el ID del item en lista Clientes
+    let clienteLookupId=null;
+    try{
+      const clientesResp=await fetch(
+        `https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdClientes}/items?expand=fields($select=Title,id)&$top=500`,
+        {headers:{Authorization:'Bearer '+token}}).then(r=>r.json());
+      const clienteItem=clientesResp.value?.find(i=>(i.fields?.Title||'').trim().toLowerCase()===nombreCliente.trim().toLowerCase());
+      if(clienteItem) clienteLookupId=parseInt(clienteItem.id);
+      console.log('[AYJ] ClienteLookupId:', clienteLookupId, 'para:', nombreCliente);
+    }catch(e){console.warn('No se pudo obtener ID cliente:',e.message);}
+
+    const fields={Title:datos.nombre,Cargo:datos.cargo,Email:datos.email,Telefono:datos.telefono,Activo:true};
+    if(clienteLookupId) fields.ClienteLookupId=clienteLookupId;
+
+    const resp=await fetch(`https://graph.microsoft.com/v1.0/sites/${siteIdComercial}/lists/${listIdContactos}/items`,{
+      method:'POST',
+      headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+      body:JSON.stringify({fields})
+    });
+    const respData=await resp.json();
+    if(!resp.ok) throw new Error(respData?.error?.message||'Error '+resp.status);
+    console.log('[AYJ] Contacto guardado ID:', respData.id);
+    if(!resp.ok) throw new Error(respData?.error?.message||'Error '+resp.status);
+    showToast('✓ Contacto agregado','success');
+    seleccionarClienteDetalle(clienteIdx);
+  }catch(e){showToast('Error: '+e.message,'error');}
+}
+
+
+async function eliminarClienteIdx(idx){
+  const c=_listaFiltradaClientes[idx];
+  if(!c) return;
+  if(!confirm(`¿Eliminar cliente "${c.titulo}"? Esta acción no se puede deshacer.`)) return;
+  try{
+    const token=await getToken();
+    await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listIdClientes}/items/${c.id}`,
+      {method:'DELETE',headers:{Authorization:'Bearer '+token}});
+    clientesData=clientesData.filter(x=>x.id!==c.id);
+    renderTablaClientes();
+    poblarDatalist();
+    showToast('✓ Cliente eliminado','success');
+  }catch(e){showToast('Error al eliminar: '+e.message,'error');}
+}
+
+async function usarClienteIdx(idx){
+  const c=_listaFiltradaClientes[idx];
+  if(!c) return;
+
+  // Primero cambiar a vista nueva para que el DOM esté listo
+  switchView('nueva');
+
+  // Rellenar cliente
+  document.getElementById('clienteInput').value=c.titulo;
+  const info=document.getElementById('clienteInfo');
+  info.style.display='block';
+
+  // Cargar contactos
+  await cargarListaContactos();
+  const contactos=await cargarContactosPorCliente(c.titulo);
+
+  let contacto=null;
+  if(contactos.length===1){
+    contacto=contactos[0];
+  } else if(contactos.length>1){
+    const opciones=contactos.map((ct,i)=>`${i+1}. ${ct.nombre}${ct.cargo?' · '+ct.cargo:''}`).join('\n');
+    const selNum=prompt(`${c.titulo} tiene ${contactos.length} contactos:\n${opciones}\n\nIngresa el número del contacto:`);
+    const num=parseInt(selNum);
+    if(num>=1&&num<=contactos.length) contacto=contactos[num-1];
+  }
+
+  // Mostrar info y poblar dropdown
+  let infoText=c.ciudad||'';
+  const wrap=document.getElementById('contactoWrap');
+  const selEl=document.getElementById('contactoSel');
+
+  if(contactos.length>0&&wrap&&selEl){
+    wrap.style.display='block';
+    selEl.innerHTML=contactos.map((ct,i)=>`<option value="${i}">${ct.nombre}${ct.cargo?' · '+ct.cargo:''}</option>`).join('');
+    selEl._contactos=contactos;
+    if(contacto){
+      const selIdx=contactos.findIndex(ct=>ct.nombre===contacto.nombre);
+      if(selIdx>=0) selEl.value=String(selIdx);
+      infoText=`${contacto.nombre}${contacto.cargo?' · '+contacto.cargo:''}${c.ciudad?' · '+c.ciudad:''}`;
+    }
+  }
+
+  info.textContent=infoText||c.titulo;
+  showToast('Cliente: '+c.titulo+(contacto?' · '+contacto.nombre:''),'success');
+}
+function editarClienteIdx(idx){
+  const c=_listaFiltradaClientes[idx];
+  if(c) editarCliente(c);
+}
+
+function usarContactoIdx(ci, nombreCliente){
+  const ct=_contactosMapa[ci];
+  if(!ct) return;
+  // Cambiar vista primero
+  switchView('nueva');
+  // Rellenar cliente
+  document.getElementById('clienteInput').value=nombreCliente;
+  const info=document.getElementById('clienteInfo');
+  if(info){
+    info.style.display='block';
+    info.textContent=ct.nombre+(ct.cargo?' · '+ct.cargo:'')+(info._ciudad?' · '+info._ciudad:'');
+  }
+  // Poblar y seleccionar en el dropdown
+  const wrap=document.getElementById('contactoWrap');
+  const selEl=document.getElementById('contactoSel');
+  if(wrap&&selEl){
+    wrap.style.display='block';
+    // Construir options con todos los contactos del mapa
+    const allContacts=Object.values(_contactosMapa);
+    selEl.innerHTML=allContacts.map((c,i)=>`<option value="${Object.keys(_contactosMapa)[i]}">${c.nombre}${c.cargo?' · '+c.cargo:''}</option>`).join('');
+    selEl._contactos=allContacts;
+    selEl.value=String(ci);
+  }
+  showToast('Contacto cargado: '+ct.nombre+' — '+nombreCliente,'success');
+}
+
+
+function usarCliente(titulo,nombre,ciudad,telefono){
+  document.getElementById('clienteInput').value=titulo;
+  const info=document.getElementById('clienteInfo');
+  info.style.display='block';
+  info.textContent=[nombre,ciudad,telefono].filter(Boolean).join(' · ');
+  switchView('nueva');
+  showToast('Cliente cargado: '+titulo,'success');
+}
+
+
+function abrirModalCliente(){
+  clienteEditandoId=null;
+  ['mc_titulo','mc_nombre','mc_email','mc_telefono','mc_ciudad','mc_nit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
+  document.getElementById('mc_pais').value='Colombia';
+  document.getElementById('modalClienteTitulo').textContent='Nuevo Cliente';
+  document.getElementById('btnGuardarCliente').innerHTML='<i class="ti ti-check"></i> Guardar Cliente';
+  document.getElementById('modalCliente').style.display='flex';
+}
+function editarCliente(c){
+  clienteEditandoId=c.id;
+  document.getElementById('mc_titulo').value=c.titulo||'';
+  document.getElementById('mc_ciudad').value=c.ciudad||'';
+  document.getElementById('mc_pais').value=c.pais||'Colombia';
+  document.getElementById('mc_nit').value=c.nit||'';
+  document.getElementById('mcContactosWrap').innerHTML='';
+  mcContactosCount=0;
+  mcAgregarContacto(); // campo vacío para agregar nuevo si quiere
+  document.getElementById('modalClienteTitulo').textContent='Editar Cliente';
+  document.getElementById('btnGuardarCliente').innerHTML='<i class="ti ti-check"></i> Actualizar';
   document.getElementById('modalCliente').style.display='flex';
 }
 function cerrarModalCliente(){document.getElementById('modalCliente').style.display='none';}
