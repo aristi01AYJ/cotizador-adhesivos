@@ -1523,10 +1523,13 @@ function renderCarrito(){
     const ytCell=item.ytVideo?`<a class="btn-pdf" href="${item.ytVideo}" target="_blank" title="Ver video en YouTube" style="color:#FF0000"><i class="ti ti-brand-youtube"></i></a>`:'';
     const badge='<span class="item-tipo-badge stock">✅ Disponible</span>';
     const precioUnit=item.tarifa/(item.cantidad||1);
+    const badgesMarca=item.marca?`<span style="display:inline-block;background:#DBEAFE;color:#1E3A8A;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:3px">${item.marca}</span>`:'';
+    const badgesTipo=item.tipologia?`<span style="display:inline-block;background:#F3F4F6;color:#374151;font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:3px">${item.tipologia}</span>`:'';
+    const badgesPres=item.presentacion?`<span style="display:inline-block;background:#D1FAE5;color:#065F46;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:3px">📦 ${item.presentacion}</span>`:'';
     const tr=document.createElement('tr');
     tr.innerHTML=`<td style="color:var(--text3);font-size:12px">${i+1}</td>`
-      +`<td><div class="item-name">${item.nombre}</div><div class="item-sub">${item.marca}${item.modelo?' · '+item.modelo:''}</div>${badge}</td>`
-      +`<td style="vertical-align:middle"><span class="item-tipo-badge" style="background:var(--bg);color:var(--text2);font-size:10px">${item.tipologia||'—'}</span></td>`
+      +`<td><div class="item-name">${item.nombre}</div><div class="item-sub">${item.modelo||''}</div><div style="margin-top:3px">${badgesMarca}${badgesTipo}${badgesPres}</div></td>`
+      +`<td style="vertical-align:middle;text-align:center">${badge}</td>`
       +`<td style="text-align:center;vertical-align:middle;white-space:nowrap">${pdfCell}${ytCell}</td>`
       +`<td style="text-align:center;vertical-align:middle;white-space:nowrap">`
         +`<div style="display:flex;align-items:center;gap:3px;justify-content:center">`
@@ -2010,8 +2013,11 @@ function generarPDF(d, soloRetornar=false){
       +'<div style="font-weight:700;font-size:13px;color:#2a2a2a;">'+item.nombre+'</div>'
       +(item.modelo?'<div style="font-size:11px;color:#555;margin-top:3px;line-height:1.4;">'+item.modelo+'</div>':'')
       +((item.tipoLicencia||'').toLowerCase().includes('servicio')&&item.horasInstalacion?'<div style="font-size:11px;color:#166534;font-weight:600;margin-top:4px;">⏱ '+item.horasInstalacion+' horas</div>':'')
-      +(item.marca?'<div style="font-size:11px;color:#777;margin-top:2px;font-weight:600;">'+marcaLabel+'</div>':'')
-    +(licBadgeHTML?'<div style="margin-top:5px;">'+licBadgeHTML+'</div>':'')
+      +'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px;">'
+        +(item.marca?'<span style="background:#DBEAFE;color:#1E3A8A;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;">'+item.marca+'</span>':'')
+        +(item.tipologia?'<span style="background:#F3F4F6;color:#374151;font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;">'+item.tipologia+'</span>':'')
+        +(item.presentacion?'<span style="background:#D1FAE5;color:#065F46;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;">📦 '+item.presentacion+'</span>':'')
+      +'</div>'
       +'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid #ececec;text-align:center;vertical-align:top;font-size:13px;font-weight:600;color:#575756;">'+(item.cantidad||1)+'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid #ececec;text-align:right;vertical-align:top;white-space:nowrap;">'
