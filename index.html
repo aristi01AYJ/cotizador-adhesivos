@@ -3184,6 +3184,26 @@ async function guardarCliente(){
   finally{btn.disabled=false;btn.innerHTML='<i class="ti ti-check"></i> Guardar';}
 }
 
+function renderTablaClientes(){
+  const q=(document.getElementById('clientesBuscador')?.value||'').toLowerCase();
+  const ciudad=(document.getElementById('clientesFiltCiudad')?.value||'').toLowerCase();
+  const orden=document.getElementById('clientesOrden')?.value||'nombre';
+  let lista=clientesData.filter(c=>
+    (!q||(c.titulo.toLowerCase().includes(q)||c.ciudad.toLowerCase().includes(q)))
+    &&(!ciudad||c.ciudad.toLowerCase()===ciudad)
+  );
+  if(orden==='nombre') lista=[...lista].sort((a,b)=>a.titulo.localeCompare(b.titulo,'es'));
+  else if(orden==='ciudad') lista=[...lista].sort((a,b)=>(a.ciudad||'').localeCompare(b.ciudad||'','es'));
+  _listaFiltradaClientes=lista;
+  const wrap=document.getElementById('clientesTablaWrap');
+  if(!wrap) return;
+  if(!lista.length){wrap.innerHTML='<div class="loading-list">Sin clientes</div>';return;}
+  wrap.innerHTML=lista.map((c,idx)=>`
+    <div onclick="seleccionarClienteDetalle(${idx})" id="cliRow_${idx}" style="padding:10px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background 0.1s" onmouseover="this.style.background='#f5f7f0'" onmouseout="this.style.background=_clienteSelIdx===${idx}?'#EDF7E3':'#fff'">
+      <div style="font-weight:600;font-size:13px;color:var(--text)">${c.titulo}</div>
+      <div style="font-size:11px;color:var(--text2);margin-top:2px">${c.ciudad||''}${c.ciudad&&c.nit?' · ':''} ${c.nit||''}</div>
+    </div>`).join('');
+}
 function showToast(msg,type=''){
   const t=document.getElementById('toast');t.textContent=msg;t.className='toast show'+(type?' '+type:'');
   clearTimeout(t._t);t._t=setTimeout(()=>t.classList.remove('show'),3000);
