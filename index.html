@@ -2737,12 +2737,17 @@ function mcAgregarContacto(datos={}){
   wrap.appendChild(div);
 }
 function abrirModalCliente(){
-  clienteEditandoId=null;
-  ['mc_titulo','mc_nombre','mc_email','mc_telefono','mc_ciudad','mc_nit'].forEach(id=>{const el=document.getElementById(id);if(el)el.value='';});
-  document.getElementById('mc_pais').value='Colombia';
   document.getElementById('modalClienteTitulo').textContent='Nuevo Cliente';
-  document.getElementById('btnGuardarCliente').innerHTML='<i class="ti ti-check"></i> Guardar Cliente';
+  ['mc_titulo','mc_ciudad','mc_pais','mc_nit'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.value=id==='mc_pais'?'Colombia':'';}
+  });
+  document.getElementById('mcContactosWrap').innerHTML='';
+  mcContactosCount=0;
+  mcAgregarContacto();
+  clienteEditandoId=null;
   document.getElementById('modalCliente').style.display='flex';
+  setTimeout(()=>document.getElementById('mc_titulo')?.focus(),100);
 }
 function editarCliente(c){
   clienteEditandoId=c.id;
