@@ -1463,20 +1463,14 @@ function buildGrupoCard(g){
   } else {
     if(g.stockCount>0){
       if(inStock) acciones.push('<button class="btn-cat remove" onclick="quitarGrupoData(this,\'stock\')"><i class="ti ti-x"></i> Quitar del Carrito</button>');
-      else acciones.push('<button class="btn-cat add-stock" onclick="agregarGrupoData(this,\'stock\')"><i class="ti ti-shopping-cart"></i> '+(g.stockCount===1?'Ultima Unidad':'Agregar al Carrito')+'</button>');
+      else acciones.push('<button class="btn-cat add-stock" onclick="agregarGrupoData(this,\'stock\')"><i class="ti ti-shopping-cart"></i> Agregar al Carrito</button>');
     }
     if(g.importCount>0){
       if(inImport) acciones.push('<button class="btn-cat remove" onclick="quitarGrupoData(this,\'importacion\')"><i class="ti ti-x"></i> Quitar del Carrito</button>');
       else acciones.push('<button class="btn-cat add-import" onclick="agregarGrupoData(this,\'importacion\')"><i class="ti ti-ship"></i> + Importacion</button>');
     }
   }
-  const stockBadge=esHerramienta
-    ?'<span class="stock-badge stock"><i class="ti ti-check" style="font-size:10px"></i> En Stock</span>'
-    :g.stockCount>0
-      ?(g.stockCount===1
-        ?'<span class="stock-badge" style="background:#FEE2E2;color:#991B1B;font-weight:700">ULTIMA UNIDAD</span>'
-        :'<span class="stock-badge stock"><i class="ti ti-check" style="font-size:10px"></i> En Stock: '+g.stockCount+'</span>')
-      :'';
+  const stockBadge='';
   const importBadge=!esHerramienta&&g.importCount>0
     ?'<span class="stock-badge importacion"><i class="ti ti-ship" style="font-size:10px"></i> En Importacion: '+g.importCount+'</span>'
     :'';
