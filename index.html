@@ -2367,7 +2367,7 @@ async function cargarClientes(forzar=false){
   if(!siteId||!listIdClientes)return;
   if(clientesData.length>0&&!forzar){poblarDatalist();poblarCiudades();renderTablaClientes();return;}
   try{
-    const todos=await graphGetAll(`/sites/${siteId}/lists/${listIdClientes}/items?expand=fields&$select=fields&$top=500`);
+    const todos=await graphGetAll(`/sites/${siteId}/lists/${listIdClientes}/items?expand=fields&$top=500`);
     clientesData=todos.map(i=>{
       const f=i.fields;
       return{
@@ -2379,7 +2379,7 @@ async function cargarClientes(forzar=false){
         telefono:(f.Telefono||f.Tel_x00e9_fono||'').trim(),
         ciudad:(f.Ciudad||'').trim(),
         pais:(f.Pais||f.Pa_x00ed_s||'Colombia').trim(),
-        nit:(f['NIT/RUT']||f.NIT_x002f_RUT||f.NIT||'').trim(),
+        nit:(f.NIT_x002f_RUT||f.NIT||f['NIT/RUT']||'').toString().trim(),
         asesor:(f.Asesor||'').trim(),
       };
     }).filter(c=>c.titulo);
@@ -2781,7 +2781,7 @@ async function guardarCliente(){
     Asesor:currentUserName,
   };
   const nit=document.getElementById('mc_nit')?.value.trim();
-  if(nit) fields.NIT=nit;
+  if(nit) fields['NIT_x002f_RUT']=nit;
 
   try{
     const token=await getToken();
