@@ -1477,7 +1477,7 @@ function buildGrupoCard(g){
   const importBadge=!esHerramienta&&g.importCount>0
     ?'<span class="stock-badge importacion"><i class="ti ti-ship" style="font-size:10px"></i> En Importacion: '+g.importCount+'</span>'
     :'';
-  div.innerHTML=`<div class="grupo-header"><div class="grupo-top"><div style="min-width:0"><div class="grupo-name">${g.title}</div><div class="grupo-marca">${g.marca}${g.modelo?' · '+g.modelo:''}${g.tipologia?' · '+g.tipologia:''}</div></div><div class="grupo-precio"><div style="display:flex;gap:5px;justify-content:flex-end;margin-bottom:4px;">${g.fichaTecnica?`<a href="${g.fichaTecnica}" target="_blank" style="color:var(--red);font-size:15px;" title="Ver ficha técnica"><i class="ti ti-file-type-pdf"></i></a>`:''}${g.ytVideo?`<a href="${g.ytVideo}" target="_blank" style="color:#FF0000;font-size:15px;" title="Ver video"><i class="ti ti-brand-youtube"></i></a>`:''}</div><div class="precio-usd">${fmtUSD(g.tarifa)}</div><div class="precio-cop">${fmtCOP(g.tarifa)}</div></div></div><div class="stock-row">${stockBadge} ${importBadge}</div></div>${acciones.length?`<div class="grupo-actions">${acciones.join('')}</div>`:''}`;
+  div.innerHTML=`<div class="grupo-header"><div class="grupo-top"><div style="min-width:0"><div class="grupo-name">${g.title}</div><div class="grupo-marca">${g.marca}${g.modelo?' · '+g.modelo:''}${g.tipologia?' · '+g.tipologia:''}</div></div><div class="grupo-precio"><div style="display:flex;gap:5px;justify-content:flex-end;align-items:center;margin-bottom:4px;">${g.fichaTecnica?`<a href="${g.fichaTecnica}" target="_blank" style="color:var(--red);font-size:15px;" title="Ver ficha técnica"><i class="ti ti-file-type-pdf"></i></a>`:''}${g.ytVideo?`<a href="${g.ytVideo}" target="_blank" style="color:#FF0000;font-size:15px;" title="Ver video"><i class="ti ti-brand-youtube"></i></a>`:''}<button onclick="abrirEditCatalogo('${btoa(encodeURIComponent(g.key))}')" title="Editar producto" style="background:none;border:1px solid #ddd;border-radius:4px;padding:1px 5px;cursor:pointer;font-size:11px;line-height:1.5;color:#575756">✏️</button></div><div class="precio-usd">${fmtUSD(g.tarifa)}</div><div class="precio-cop">${fmtCOP(g.tarifa)}</div></div></div><div class="stock-row">${stockBadge} ${importBadge}</div></div>${acciones.length?`<div class="grupo-actions">${acciones.join('')}</div>`:''}`;
   return div;
 }
 
@@ -1496,7 +1496,7 @@ function buildBpCard(m){
   const div=document.createElement('div');div.className='bp-card'+(inCart?' en-carrito':'');
   const pdfIcon=m.fichaTecnica?`<a href="${m.fichaTecnica}" target="_blank" style="color:var(--red);font-size:15px;" title="Ver ficha técnica"><i class="ti ti-file-type-pdf"></i></a>`:'';
   const ytIcon=m.ytVideo?`<a href="${m.ytVideo}" target="_blank" style="color:#FF0000;font-size:15px;" title="Ver video en YouTube"><i class="ti ti-brand-youtube"></i></a>`:'';
-  const iconos=(pdfIcon||ytIcon)?`<div style="display:flex;gap:5px;justify-content:flex-end;margin-bottom:4px;">${pdfIcon}${ytIcon}</div>`:'';
+  const iconos=(pdfIcon||ytIcon||true)?`<div style="display:flex;gap:5px;justify-content:flex-end;align-items:center;margin-bottom:4px;">${pdfIcon}${ytIcon}<button onclick="abrirEditBP('${m.id}')" title="Editar producto" style="background:none;border:1px solid #ddd;border-radius:4px;padding:1px 5px;cursor:pointer;font-size:11px;line-height:1.5;color:#575756">✏️</button></div>`:'';
   div.innerHTML=`<div class="bp-top"><div style="min-width:0"><div class="bp-name">${m.title}</div><div class="bp-sub">${m.marca}${m.modelo?' · '+m.modelo:''}${m.tipologia?' · '+m.tipologia:''}</div><span class="bp-badge">Bajo Pedido</span></div><div class="grupo-precio">${iconos}<div class="precio-usd">${fmtUSD(m.tarifa)}</div><div class="precio-cop">${fmtCOP(m.tarifa)}</div></div></div><button class="btn-add-bp ${inCart?'remove':''}" onclick="toggleBP('${m.id}')"><i class="ti ti-${inCart?'x':'shopping-cart'}"></i> ${inCart?'Eliminar del Carrito':'Agregar al Carrito'}</button>`;
   return div;
 }
@@ -1548,7 +1548,7 @@ function renderCarrito(){
         :`<div class="price-usd-item" id="pusd_${i}">${fmtUSD(item.tarifa)}</div>`)
       +`</td>`
       +`<td class="price-cell" style="vertical-align:middle"><div class="price-cop-item" id="pcop_${i}">${fmtCOP(item.tarifa)}</div></td>`
-      +`<td style="vertical-align:middle"><button onclick="abrirEditItem(${i})" title="Editar producto" style="background:none;border:1px solid #ddd;border-radius:4px;padding:3px 6px;cursor:pointer;font-size:12px;margin-right:3px">✏️</button><button class="btn-remove" onclick="removerItem(${i})"><i class="ti ti-x"></i></button></td>`;
+      +`<td style="vertical-align:middle"><button class="btn-remove" onclick="removerItem(${i})"><i class="ti ti-x"></i></button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -4456,7 +4456,44 @@ function getIniciales(vendedor){
 }
 
 
-let _editItemIdx=-1, _editItemSpId=null;
+let _editItemIdx=-1, _editItemSpId=null, _editItemKey=null, _editItemIsBP=false;
+
+function abrirEditCatalogo(keyB64){
+  const key=decodeURIComponent(atob(keyB64));
+  const g=grupos.find(x=>x.key===key);
+  if(!g) return;
+  _editItemKey=key; _editItemIsBP=false; _editItemSpId=g.id||null; _editItemIdx=-1;
+  document.getElementById('ei_nombre').value=g.title||'';
+  document.getElementById('ei_marca').value=g.marca||'';
+  document.getElementById('ei_modelo').value=g.modelo||'';
+  document.getElementById('ei_tipologia').value=g.tipologia||'';
+  document.getElementById('ei_presentacion').value=g.presentacion||'';
+  document.getElementById('ei_tarifa').value=g.tarifa||0;
+  document.getElementById('ei_costoAYJ').value=g.costoAYJ||0;
+  document.getElementById('ei_costoTotal').value=g.costoTotal||0;
+  document.getElementById('ei_moneda').value=g.moneda||'USD';
+  document.getElementById('ei_fichaTecnica').value=g.fichaTecnica||'';
+  document.getElementById('ei_spStatus').textContent='';
+  document.getElementById('modalEditItem').style.display='flex';
+}
+
+function abrirEditBP(id){
+  const m=bajosPedido.find(x=>x.id===id);
+  if(!m) return;
+  _editItemKey=id; _editItemIsBP=true; _editItemSpId=m.id||null; _editItemIdx=-1;
+  document.getElementById('ei_nombre').value=m.title||'';
+  document.getElementById('ei_marca').value=m.marca||'';
+  document.getElementById('ei_modelo').value=m.modelo||'';
+  document.getElementById('ei_tipologia').value=m.tipologia||'';
+  document.getElementById('ei_presentacion').value=m.presentacion||'';
+  document.getElementById('ei_tarifa').value=m.tarifa||0;
+  document.getElementById('ei_costoAYJ').value=m.costoAYJ||0;
+  document.getElementById('ei_costoTotal').value=m.costoTotal||0;
+  document.getElementById('ei_moneda').value=m.moneda||'USD';
+  document.getElementById('ei_fichaTecnica').value=m.fichaTecnica||'';
+  document.getElementById('ei_spStatus').textContent='';
+  document.getElementById('modalEditItem').style.display='flex';
+}
 
 function abrirEditItem(idx){
   const item=carrito[idx];
@@ -4483,70 +4520,86 @@ function cerrarEditItem(){
 }
 
 async function guardarEditItem(actualizarSP){
-  if(_editItemIdx<0) return;
-  const item=carrito[_editItemIdx];
-  if(!item) return;
+  const nuevoNombre=document.getElementById('ei_nombre').value.trim();
+  const nuevaMarca=document.getElementById('ei_marca').value.trim();
+  const nuevoModelo=document.getElementById('ei_modelo').value.trim();
+  const nuevaTipo=document.getElementById('ei_tipologia').value.trim();
+  const nuevaPres=document.getElementById('ei_presentacion').value.trim();
+  const nuevaTarifa=parseFloat(document.getElementById('ei_tarifa').value)||0;
+  const nuevoCostoAYJ=parseFloat(document.getElementById('ei_costoAYJ').value)||0;
+  const nuevoCostoTotal=parseFloat(document.getElementById('ei_costoTotal').value)||0;
+  const nuevaMoneda=document.getElementById('ei_moneda').value;
+  const nuevaFicha=document.getElementById('ei_fichaTecnica').value.trim();
 
-  // Actualizar en carrito
-  item.nombre=document.getElementById('ei_nombre').value.trim()||item.nombre;
-  item.marca=document.getElementById('ei_marca').value.trim();
-  item.modelo=document.getElementById('ei_modelo').value.trim();
-  item.tipologia=document.getElementById('ei_tipologia').value.trim();
-  item.presentacion=document.getElementById('ei_presentacion').value.trim();
-  item.tarifa=parseFloat(document.getElementById('ei_tarifa').value)||0;
-  item.costoAYJ=parseFloat(document.getElementById('ei_costoAYJ').value)||0;
-  item.costoTotal=parseFloat(document.getElementById('ei_costoTotal').value)||0;
-  item.moneda=document.getElementById('ei_moneda').value;
-  item.fichaTecnica=document.getElementById('ei_fichaTecnica').value.trim();
-
-  // Actualizar también en rawMaquinas/grupos para que el catálogo refleje el cambio
-  const grp=grupos.find(g=>g.key===item.grupoKey);
-  if(grp){
-    grp.tarifa=item.tarifa; grp.marca=item.marca;
-    grp.fichaTecnica=item.fichaTecnica;
+  // Actualizar en grupos/BP del catálogo
+  if(_editItemKey&&!_editItemIsBP){
+    const g=grupos.find(x=>x.key===_editItemKey);
+    if(g){ g.title=nuevoNombre||g.title; g.marca=nuevaMarca; g.modelo=nuevoModelo; g.tipologia=nuevaTipo; g.presentacion=nuevaPres; g.tarifa=nuevaTarifa; g.costoAYJ=nuevoCostoAYJ; g.costoTotal=nuevoCostoTotal; g.moneda=nuevaMoneda; g.fichaTecnica=nuevaFicha; }
+    // Actualizar también rawMaquinas
+    rawMaquinas.filter(m=>m.title===(grupos.find(x=>x.key===_editItemKey)?.title||'')).forEach(m=>{ m.tarifa=nuevaTarifa; m.fichaTecnica=nuevaFicha; m.marca=nuevaMarca; });
+  }
+  if(_editItemKey&&_editItemIsBP){
+    const m=bajosPedido.find(x=>x.id===_editItemKey);
+    if(m){ m.title=nuevoNombre||m.title; m.marca=nuevaMarca; m.modelo=nuevoModelo; m.tipologia=nuevaTipo; m.presentacion=nuevaPres; m.tarifa=nuevaTarifa; m.costoAYJ=nuevoCostoAYJ; m.costoTotal=nuevoCostoTotal; m.fichaTecnica=nuevaFicha; }
+  }
+  // Actualizar item en carrito si está agregado
+  carrito.forEach(item=>{
+    if((item.grupoKey===_editItemKey)||(_editItemIsBP&&item.id===_editItemKey)){
+      if(nuevoNombre) item.nombre=nuevoNombre;
+      item.marca=nuevaMarca; item.modelo=nuevoModelo; item.tipologia=nuevaTipo;
+      item.presentacion=nuevaPres; item.tarifa=nuevaTarifa;
+      item.costoAYJ=nuevoCostoAYJ; item.costoTotal=nuevoCostoTotal;
+      item.fichaTecnica=nuevaFicha;
+    }
+  });
+  // Actualizar en carrito por índice si viene de ahí
+  if(_editItemIdx>=0&&carrito[_editItemIdx]){
+    const item=carrito[_editItemIdx];
+    if(nuevoNombre) item.nombre=nuevoNombre;
+    item.marca=nuevaMarca; item.modelo=nuevoModelo; item.tipologia=nuevaTipo;
+    item.presentacion=nuevaPres; item.tarifa=nuevaTarifa;
+    item.costoAYJ=nuevoCostoAYJ; item.costoTotal=nuevoCostoTotal; item.fichaTecnica=nuevaFicha;
   }
 
   if(actualizarSP){
     const statusEl=document.getElementById('ei_spStatus');
-    statusEl.textContent='Guardando en SharePoint...';
+    statusEl.textContent='Guardando en SharePoint...'; statusEl.style.color='#666';
     try{
       const token=await getToken();
-      // Buscar el item en SP por nombre
-      let spItemId=null;
-      if(_editItemSpId){
-        // Intentar actualizar directamente si tenemos el ID de SP
+      const spId=_editItemSpId;
+      if(spId){
         const fields={
-          Title:item.nombre,
-          Marca:item.marca||'',
-          Modelo:item.modelo||'',
-          Tipologia:item.tipologia||'',
-          Presentaci_x00f3_n:item.presentacion||'',
-          TARIFA:item.tarifa||0,
-          COSTO_AYJ:item.costoAYJ||0,
-          CostoTotal:item.costoTotal||0,
+          Title:nuevoNombre,
+          Marca:nuevaMarca,
+          Modelo:nuevoModelo,
+          Tipologia:nuevaTipo,
+          TARIFA:nuevaTarifa,
+          COSTO_AYJ:nuevoCostoAYJ,
+          CostoTotal:nuevoCostoTotal,
         };
-        // Ficha técnica es Hyperlink
-        if(item.fichaTecnica) fields.Ficha_x0020_Tecnica={Url:item.fichaTecnica,Description:'Ficha Técnica'};
-        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listIdMaquinas}/items/${_editItemSpId}/fields`,{
+        if(nuevaPres) fields.Presentaci_x00f3_n=nuevaPres;
+        if(nuevaFicha) fields.Ficha_x0020_Tecnica={Url:nuevaFicha,Description:'Ficha Técnica'};
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listIdMaquinas}/items/${spId}/fields`,{
           method:'PATCH',
           headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
           body:JSON.stringify(fields)
         });
         statusEl.textContent='✅ Actualizado en SharePoint';
         statusEl.style.color='#166534';
+        setTimeout(()=>cerrarEditItem(),1500);
       } else {
-        statusEl.textContent='⚠ Sin ID de SP — solo actualizado en cotización';
+        statusEl.textContent='⚠ Sin ID de SP — solo actualizado localmente';
         statusEl.style.color='#92400E';
       }
     }catch(e){
       statusEl.textContent='❌ Error: '+e.message;
       statusEl.style.color='#991B1B';
     }
+  } else {
+    cerrarEditItem();
   }
 
-  renderCarrito();
-  calcTotales();
-  if(!actualizarSP) cerrarEditItem();
+  renderCarrito(); calcTotales(); renderCatalogo();
 }
 
 initMsal();
