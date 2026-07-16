@@ -1504,7 +1504,7 @@ function buildBpCard(m){
 function agregarGrupo(key,tipo){
   const g=grupos.find(x=>x.key===key);
   if(!g||carrito.some(i=>i.grupoKey===key&&i.tipo===tipo))return;
-  carrito.push({id:'g_'+key+'_'+tipo,grupoKey:key,tipo,nombre:g.title,marca:g.marca,modelo:g.modelo,tipologia:g.tipologia||'',tarifa:g.tarifa,descripcion:g.descripcion,fichaTecnica:g.fichaTecnica,ytVideo:g.ytVideo||'',cantidad:1,stockCount:g.stockCount,importCount:g.importCount});
+  carrito.push({id:'g_'+key+'_'+tipo,grupoKey:key,tipo,nombre:g.title,marca:g.marca,modelo:g.modelo,tipologia:g.tipologia||'',tarifa:g.tarifa,descripcion:g.descripcion,fichaTecnica:g.fichaTecnica,ytVideo:g.ytVideo||'',cantidad:1,stockCount:g.stockCount,importCount:g.importCount,presentacion:g.presentacion||'',costoAYJ:g.costoAYJ||0,costoTotal:g.costoTotal||0,moneda:g.moneda||'USD',spId:g.id||null});
   renderCarrito();renderCatalogo();calcTotales();showToast('Agregado: '+g.title,'success');
 }
 function quitarGrupo(key,tipo){carrito=carrito.filter(i=>!(i.grupoKey===key&&i.tipo===tipo));renderCarrito();renderCatalogo();calcTotales();}
@@ -1548,7 +1548,7 @@ function renderCarrito(){
         :`<div class="price-usd-item" id="pusd_${i}">${fmtUSD(item.tarifa)}</div>`)
       +`</td>`
       +`<td class="price-cell" style="vertical-align:middle"><div class="price-cop-item" id="pcop_${i}">${fmtCOP(item.tarifa)}</div></td>`
-      +`<td style="vertical-align:middle"><button class="btn-remove" onclick="removerItem(${i})"><i class="ti ti-x"></i></button></td>`;
+      +`<td style="vertical-align:middle"><button onclick="abrirEditItem(${i})" title="Editar producto" style="background:none;border:1px solid #ddd;border-radius:4px;padding:3px 6px;cursor:pointer;font-size:12px;margin-right:3px">✏️</button><button class="btn-remove" onclick="removerItem(${i})"><i class="ti ti-x"></i></button></td>`;
     tbody.appendChild(tr);
   });
 }
@@ -2021,6 +2021,7 @@ function generarPDF(d, soloRetornar=false){
       +'<td style="padding:8px 10px;border-bottom:1px solid #ececec;">'
       +'<div style="font-weight:700;font-size:13px;color:#2a2a2a;">'+item.nombre+'</div>'
       +(item.modelo?'<div style="font-size:11px;color:#555;margin-top:3px;line-height:1.4;">'+item.modelo+'</div>':'')
+      +(item.fichaTecnica?'<div style="margin-top:4px;"><a href="'+item.fichaTecnica+'" target="_blank" style="color:#C0392B;font-size:10px;font-weight:700;text-decoration:none;">📄 Ver Ficha Técnica</a></div>':'')
       +((item.tipoLicencia||'').toLowerCase().includes('servicio')&&item.horasInstalacion?'<div style="font-size:11px;color:#166534;font-weight:600;margin-top:4px;">⏱ '+item.horasInstalacion+' horas</div>':'')
       +'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px;">'
         +(item.marca?'<span style="background:#DBEAFE;color:#1E3A8A;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;">'+item.marca+'</span>':'')
@@ -4454,6 +4455,100 @@ function getIniciales(vendedor){
   return key?VENDEDOR_INICIALES[key]:'AYJ';
 }
 
+
+let _editItemIdx=-1, _editItemSpId=null;
+
+function abrirEditItem(idx){
+  const item=carrito[idx];
+  if(!item) return;
+  _editItemIdx=idx;
+  _editItemSpId=item.spId||item.grupoKey||null;
+  document.getElementById('ei_nombre').value=item.nombre||'';
+  document.getElementById('ei_marca').value=item.marca||'';
+  document.getElementById('ei_modelo').value=item.modelo||'';
+  document.getElementById('ei_tipologia').value=item.tipologia||'';
+  document.getElementById('ei_presentacion').value=item.presentacion||'';
+  document.getElementById('ei_tarifa').value=item.tarifa||0;
+  document.getElementById('ei_costoAYJ').value=item.costoAYJ||0;
+  document.getElementById('ei_costoTotal').value=item.costoTotal||0;
+  document.getElementById('ei_moneda').value=item.moneda||'USD';
+  document.getElementById('ei_fichaTecnica').value=item.fichaTecnica||'';
+  document.getElementById('ei_spStatus').textContent='';
+  document.getElementById('modalEditItem').style.display='flex';
+}
+
+function cerrarEditItem(){
+  document.getElementById('modalEditItem').style.display='none';
+  _editItemIdx=-1; _editItemSpId=null;
+}
+
+async function guardarEditItem(actualizarSP){
+  if(_editItemIdx<0) return;
+  const item=carrito[_editItemIdx];
+  if(!item) return;
+
+  // Actualizar en carrito
+  item.nombre=document.getElementById('ei_nombre').value.trim()||item.nombre;
+  item.marca=document.getElementById('ei_marca').value.trim();
+  item.modelo=document.getElementById('ei_modelo').value.trim();
+  item.tipologia=document.getElementById('ei_tipologia').value.trim();
+  item.presentacion=document.getElementById('ei_presentacion').value.trim();
+  item.tarifa=parseFloat(document.getElementById('ei_tarifa').value)||0;
+  item.costoAYJ=parseFloat(document.getElementById('ei_costoAYJ').value)||0;
+  item.costoTotal=parseFloat(document.getElementById('ei_costoTotal').value)||0;
+  item.moneda=document.getElementById('ei_moneda').value;
+  item.fichaTecnica=document.getElementById('ei_fichaTecnica').value.trim();
+
+  // Actualizar también en rawMaquinas/grupos para que el catálogo refleje el cambio
+  const grp=grupos.find(g=>g.key===item.grupoKey);
+  if(grp){
+    grp.tarifa=item.tarifa; grp.marca=item.marca;
+    grp.fichaTecnica=item.fichaTecnica;
+  }
+
+  if(actualizarSP){
+    const statusEl=document.getElementById('ei_spStatus');
+    statusEl.textContent='Guardando en SharePoint...';
+    try{
+      const token=await getToken();
+      // Buscar el item en SP por nombre
+      let spItemId=null;
+      if(_editItemSpId){
+        // Intentar actualizar directamente si tenemos el ID de SP
+        const fields={
+          Title:item.nombre,
+          Marca:item.marca||'',
+          Modelo:item.modelo||'',
+          Tipologia:item.tipologia||'',
+          Presentaci_x00f3_n:item.presentacion||'',
+          TARIFA:item.tarifa||0,
+          COSTO_AYJ:item.costoAYJ||0,
+          CostoTotal:item.costoTotal||0,
+        };
+        // Ficha técnica es Hyperlink
+        if(item.fichaTecnica) fields.Ficha_x0020_Tecnica={Url:item.fichaTecnica,Description:'Ficha Técnica'};
+        await fetch(`https://graph.microsoft.com/v1.0/sites/${siteId}/lists/${listIdMaquinas}/items/${_editItemSpId}/fields`,{
+          method:'PATCH',
+          headers:{Authorization:'Bearer '+token,'Content-Type':'application/json'},
+          body:JSON.stringify(fields)
+        });
+        statusEl.textContent='✅ Actualizado en SharePoint';
+        statusEl.style.color='#166534';
+      } else {
+        statusEl.textContent='⚠ Sin ID de SP — solo actualizado en cotización';
+        statusEl.style.color='#92400E';
+      }
+    }catch(e){
+      statusEl.textContent='❌ Error: '+e.message;
+      statusEl.style.color='#991B1B';
+    }
+  }
+
+  renderCarrito();
+  calcTotales();
+  if(!actualizarSP) cerrarEditItem();
+}
+
 initMsal();
 </script>
 
@@ -4667,6 +4762,67 @@ initMsal();
 .liq-kpi .liq-value{font-size:20px;font-weight:800;color:#575756}
 .liq-kpi .liq-sub{font-size:11px;color:#aaa;margin-top:2px}
 </style>
+
+<!-- Modal edición inline producto -->
+<div id="modalEditItem" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:10px;padding:0;width:520px;max-width:95vw;max-height:90vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,0.25)">
+    <div style="background:#575756;color:#fff;padding:14px 20px;border-radius:10px 10px 0 0;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;font-size:14px">✏️ Editar Producto</span>
+      <button onclick="cerrarEditItem()" style="background:none;border:none;color:#fff;font-size:20px;cursor:pointer">×</button>
+    </div>
+    <div style="padding:20px;display:grid;grid-template-columns:1fr 1fr;gap:12px">
+      <div class="field-group" style="grid-column:1/-1">
+        <label>Nombre / Código</label>
+        <input type="text" id="ei_nombre" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>Marca</label>
+        <input type="text" id="ei_marca" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>Modelo / Descripción</label>
+        <input type="text" id="ei_modelo" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>Tipología</label>
+        <input type="text" id="ei_tipologia" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>Presentación</label>
+        <input type="text" id="ei_presentacion" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>TARIFA (precio venta)</label>
+        <input type="number" id="ei_tarifa" step="0.01" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>COSTO_AYJ</label>
+        <input type="number" id="ei_costoAYJ" step="0.01" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>CostoTotal</label>
+        <input type="number" id="ei_costoTotal" step="0.01" style="width:100%">
+      </div>
+      <div class="field-group">
+        <label>Moneda</label>
+        <select id="ei_moneda" style="width:100%">
+          <option value="USD">USD</option>
+          <option value="COP">COP</option>
+        </select>
+      </div>
+      <div class="field-group" style="grid-column:1/-1">
+        <label>Ficha Técnica (URL)</label>
+        <input type="url" id="ei_fichaTecnica" placeholder="https://..." style="width:100%">
+      </div>
+    </div>
+    <div style="padding:0 20px 20px;display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap">
+      <div id="ei_spStatus" style="font-size:11px;color:#888;align-self:center;flex:1"></div>
+      <button onclick="cerrarEditItem()" class="btn-sec">Cancelar</button>
+      <button onclick="guardarEditItem(false)" class="btn-sec" style="color:#1E40AF;border-color:#1E40AF">Solo en cotización</button>
+      <button onclick="guardarEditItem(true)" class="btn-primary">💾 Guardar + actualizar SP</button>
+    </div>
+  </div>
+</div>
 
 
 </body></html>
