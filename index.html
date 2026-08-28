@@ -1368,12 +1368,13 @@ function procesarCatalogo(){
   const mapa={};
   disponibles.forEach(m=>{
     const key=m.title.toLowerCase().trim();
-    if(!mapa[key])mapa[key]={key,title:m.title,marca:m.marca,modelo:m.modelo,tipologia:m.tipologia,tarifa:m.tarifa,descripcion:m.descripcion,fichaTecnica:m.fichaTecnica,ytVideo:m.ytVideo||'',stockCount:0,importCount:0,horasInstalacion:m.horasInstalacion||0,costoAYJ:m.costoAYJ||0};
+    if(!mapa[key])mapa[key]={key,title:m.title,marca:m.marca,modelo:m.modelo,tipologia:m.tipologia,tarifa:m.tarifa,descripcion:m.descripcion,fichaTecnica:m.fichaTecnica,ytVideo:m.ytVideo||'',stockCount:0,importCount:0,horasInstalacion:m.horasInstalacion||0,costoAYJ:m.costoAYJ||0,presentacion:m.presentacion||''};
     if(m.ytVideo&&!mapa[key].ytVideo)mapa[key].ytVideo=m.ytVideo;
     const st=m.estadoStock.toLowerCase();
     if(st.includes('importa'))mapa[key].importCount++;else mapa[key].stockCount++;
     if(m.fichaTecnica&&!mapa[key].fichaTecnica)mapa[key].fichaTecnica=m.fichaTecnica;
     if(m.horasInstalacion&&!mapa[key].horasInstalacion)mapa[key].horasInstalacion=m.horasInstalacion;
+    if(m.presentacion&&!mapa[key].presentacion)mapa[key].presentacion=m.presentacion;
   });
   grupos=Object.values(mapa).sort((a,b)=>a.title.localeCompare(b.title));
 }
@@ -1511,7 +1512,7 @@ function quitarGrupo(key,tipo){carrito=carrito.filter(i=>!(i.grupoKey===key&&i.t
 function toggleBP(id){
   const idx=carrito.findIndex(i=>i.id===id);
   if(idx>=0)carrito.splice(idx,1);
-  else{const m=bajosPedido.find(x=>x.id===id);if(!m)return;carrito.push({id:m.id,grupoKey:null,tipo:'pedido',nombre:m.title,marca:m.marca,modelo:m.modelo,tipologia:m.tipologia||'',tarifa:m.tarifa,descripcion:m.descripcion,fichaTecnica:m.fichaTecnica,ytVideo:m.ytVideo||'',cantidad:1});showToast('Agregado: '+m.title,'success');}
+  else{const m=bajosPedido.find(x=>x.id===id);if(!m)return;carrito.push({id:m.id,grupoKey:null,tipo:'pedido',nombre:m.title,marca:m.marca,modelo:m.modelo,tipologia:m.tipologia||'',tarifa:m.tarifa,descripcion:m.descripcion,fichaTecnica:m.fichaTecnica,ytVideo:m.ytVideo||'',cantidad:1,presentacion:m.presentacion||''});showToast('Agregado: '+m.title,'success');}
   renderCarrito();renderCatalogo();calcTotales();
 }
 
@@ -1528,7 +1529,7 @@ function renderCarrito(){
     const precioUnit=item.tarifa/(item.cantidad||1);
     const badgesMarca=item.marca?`<span style="display:inline-block;background:#DBEAFE;color:#1E3A8A;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:3px">${item.marca}</span>`:'';
     const badgesTipo=item.tipologia?`<span style="display:inline-block;background:#F3F4F6;color:#374151;font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;margin-left:3px">${item.tipologia}</span>`:'';
-    const badgesPres=item.presentacion?`<span style="display:inline-block;background:#D1FAE5;color:#065F46;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:3px">📦 ${item.presentacion}</span>`:'';
+    const badgesPres=item.presentacion?`<span style="display:inline-block;background:#D1FAE5;color:#065F46;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;margin-left:3px" title="Unidad de medida">U.M.: ${item.presentacion}</span>`:'';
     const tr=document.createElement('tr');
     tr.innerHTML=`<td style="color:var(--text3);font-size:12px">${i+1}</td>`
       +`<td><div class="item-name">${item.nombre}</div><div class="item-sub">${item.modelo||''}</div><div style="margin-top:3px">${badgesMarca}${badgesTipo}${badgesPres}</div></td>`
@@ -2026,7 +2027,7 @@ function generarPDF(d, soloRetornar=false){
       +'<div style="margin-top:5px;display:flex;flex-wrap:wrap;gap:3px;">'
         +(item.marca?'<span style="background:#DBEAFE;color:#1E3A8A;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;">'+item.marca+'</span>':'')
         +(item.tipologia?'<span style="background:#F3F4F6;color:#374151;font-size:9px;font-weight:600;padding:1px 6px;border-radius:10px;">'+item.tipologia+'</span>':'')
-        +(item.presentacion?'<span style="background:#D1FAE5;color:#065F46;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;">📦 '+item.presentacion+'</span>':'')
+        +(item.presentacion?'<span style="background:#D1FAE5;color:#065F46;font-size:9px;font-weight:700;padding:1px 6px;border-radius:10px;">U.M.: '+item.presentacion+'</span>':'')
       +'</div>'
       +'</td>'
       +'<td style="padding:8px 10px;border-bottom:1px solid #ececec;text-align:center;vertical-align:top;font-size:13px;font-weight:600;color:#575756;">'+(item.cantidad||1)+'</td>'
@@ -2327,6 +2328,7 @@ function duplicarOferta(cliente, itemsData){
       tarifa:item.tarifaUSD||item.tarifa||0,
       descripcion:enCat?.descripcion||'',
       fichaTecnica:enCat?.fichaTecnica||'',
+      presentacion:enCat?.presentacion||'',
       cantidad:item.cantidad||1
     });
   });
@@ -3663,12 +3665,12 @@ function liqGetItem(){
     const g=grupos.find(x=>x.key===key);
     if(g){
       const tipo=g.stockCount>0?'stock':g.importCount>0?'importacion':'pedido';
-      item={grupoKey:null,tipo,nombre:g.title,marca:g.marca,modelo:g.modelo||'',tipologia:g.tipologia||'',tarifa:precio,descripcion:g.descripcion||'',fichaTecnica:g.fichaTecnica||'',ytVideo:g.ytVideo||'',cantidad:1,stockCount:g.stockCount,importCount:g.importCount};
+      item={grupoKey:null,tipo,nombre:g.title,marca:g.marca,modelo:g.modelo||'',tipologia:g.tipologia||'',tarifa:precio,descripcion:g.descripcion||'',fichaTecnica:g.fichaTecnica||'',ytVideo:g.ytVideo||'',cantidad:1,stockCount:g.stockCount,importCount:g.importCount,presentacion:g.presentacion||''};
     }
   } else if(gkey.startsWith('bp_')){
     const id=gkey.slice(3);
     const m=bajosPedido.find(x=>x.id===id);
-    if(m) item={grupoKey:null,tipo:'pedido',nombre:m.title,marca:m.marca,modelo:m.modelo||'',tipologia:m.tipologia||'',tarifa:precio,descripcion:m.descripcion||'',fichaTecnica:m.fichaTecnica||'',ytVideo:m.ytVideo||'',cantidad:1,stockCount:0,importCount:0};
+    if(m) item={grupoKey:null,tipo:'pedido',nombre:m.title,marca:m.marca,modelo:m.modelo||'',tipologia:m.tipologia||'',tarifa:precio,descripcion:m.descripcion||'',fichaTecnica:m.fichaTecnica||'',ytVideo:m.ytVideo||'',cantidad:1,stockCount:0,importCount:0,presentacion:m.presentacion||''};
   }
   if(!item) item={grupoKey:null,tipo:'pedido',nombre:'Máquina — Liquidador',marca:'',modelo:'',tipologia:'',tarifa:precio,descripcion:'',fichaTecnica:'',ytVideo:'',cantidad:1,stockCount:0,importCount:0};
   return item;
