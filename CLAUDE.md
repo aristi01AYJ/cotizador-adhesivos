@@ -46,4 +46,7 @@ Este repositorio es **público** (GitHub Pages gratis). El token de GitHub, el A
 - Modal de edición: Nombre, Marca, Modelo, Tipología, Presentación, TARIFA, COSTO_AYJ, CostoTotal, Moneda, URL Ficha.
 - Dos modos de guardado: "Solo en cotización" vs "Guardar + actualizar SP" (este último hace PATCH a `ADHESIVOS_LIST`).
 - Campo Ficha Técnica en SharePoint: `Ficha_x0020_Tecnica`, tipo Hyperlink `{Url, Description}`.
-- Pendiente: verificar el nombre interno en SharePoint de `Presentación` para la edición inline (puede tener sufijo tipo `_x00f3_n`).
+- Pendiente: verificar el nombre interno en SharePoint de `Presentación` para la edición inline (puede tener sufijo tipo `_x00f3_n`). El PATCH de guardado (`ei_presentacion` → SP) solo escribe a `Presentaci_x00f3_n`; si en algún tenant el campo real es `Presentacion` a secas, ese guardado fallaría silenciosamente — revisar si se reporta.
+
+### Fixes recientes
+- **28-ago-2026 — Unidad de Medida (Presentación) no llegaba al Carrito ni a la Cotización.** Causa: `cargarMaquinas()` sí leía `presentacion` de SharePoint por ítem individual, pero `procesarCatalogo()` no la copiaba al agrupar en `grupos` (línea ~1371), y además faltaba en 3 sitios donde se hace `carrito.push(...)`: `toggleBP` (Bajo Pedido), `liqGetItem` (Liquidador) y `duplicarOferta` (cargar cotización guardada). Se agregó `presentacion` en los 4 puntos. También se cambió el badge de `📦 <valor>` a `U.M.: <valor>` en el carrito y en el PDF para que sea inequívoco que es la unidad de medida.
