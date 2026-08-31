@@ -36,6 +36,7 @@ Este repositorio es **público** (GitHub Pages gratis). El token de GitHub, el A
 - Campo NIT interno: `NIT_x002f_RUT` — leer con `.toString().trim()`.
 - Campos tipo Hyperlink (LinkPDF, Ficha Técnica): `{Url:"...", Description:"..."}`.
 - Clientes/Contactos: SIEMPRE en el `siteId` de Comercial (todos los cotizadores, incluso SVC).
+- **SIEMPRE usar `graphGetAll()` (pagina con `@odata.nextLink`) para cualquier query que pueda superar 500 ítems** — especialmente `generarNumOferta()`. `graphGet()` con `$top=500` solo trae la primera página; una vez la lista de Cotizaciones supera 500 registros, el consecutivo se queda pegado para siempre porque deja de ver los ítems más nuevos (bug real, 31-ago-2026, afectó los 5 cotizadores).
 
 
 ## Este repo específico: Adhesivos
@@ -49,4 +50,5 @@ Este repositorio es **público** (GitHub Pages gratis). El token de GitHub, el A
 - Pendiente: verificar el nombre interno en SharePoint de `Presentación` para la edición inline (puede tener sufijo tipo `_x00f3_n`). El PATCH de guardado (`ei_presentacion` → SP) solo escribe a `Presentaci_x00f3_n`; si en algún tenant el campo real es `Presentacion` a secas, ese guardado fallaría silenciosamente — revisar si se reporta.
 
 ### Fixes recientes
+- **31-ago-2026 — Consecutivo de cotización pegado (COT-2026-435 repetido en 5 cotizaciones seguidas).** `generarNumOferta()` usaba `graphGet()` sin paginar; se cambió a `graphGetAll()`. Ver regla en la sección de Graph API arriba.
 - **28-ago-2026 — Unidad de Medida (Presentación) no llegaba al Carrito ni a la Cotización.** Causa: `cargarMaquinas()` sí leía `presentacion` de SharePoint por ítem individual, pero `procesarCatalogo()` no la copiaba al agrupar en `grupos` (línea ~1371), y además faltaba en 3 sitios donde se hace `carrito.push(...)`: `toggleBP` (Bajo Pedido), `liqGetItem` (Liquidador) y `duplicarOferta` (cargar cotización guardada). Se agregó `presentacion` en los 4 puntos. También se cambió el badge de `📦 <valor>` a `U.M.: <valor>` en el carrito y en el PDF para que sea inequívoco que es la unidad de medida.
