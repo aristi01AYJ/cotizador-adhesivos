@@ -252,8 +252,7 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
       <button class="active" id="navNueva" onclick="switchView('nueva')">Nueva oferta</button>
       <button id="navClientes" onclick="switchView('clientes')">Clientes</button>
       <button id="navHistorial" onclick="switchView('historial')">Historial</button>
-      <button onclick="abrirLiqADH()" style="background:none;border:none;padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);font-family:inherit"><i class="ti ti-calculator"></i> Liquidador</button>
-      <button onclick="abrirPedidoFabrica()" style="background:none;border:none;padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:var(--text2);font-family:inherit"><i class="ti ti-truck-delivery"></i> Pedido a Fábrica</button>
+      <button onclick="abrirPedidoFabrica()" style="background:none;border:none;padding:6px 14px;border-radius:var(--radius);cursor:pointer;font-size:13px;color:rgba(255,255,255,0.7);font-family:inherit"><i class="ti ti-truck-delivery"></i> Pedido a Fábrica</button>
 
     </div>
     <div class="topbar-right">
@@ -412,6 +411,7 @@ body.modo-cop .items-table th:nth-child(4),body.modo-cop .items-table td:nth-chi
             <span style="font-size:10px;color:var(--text2)" id="descMaxLabel">máx 20%</span>
             <button onclick="solicitarClaveDesc()" id="descLockBtn" style="background:none;border:none;cursor:pointer;color:var(--text3);font-size:13px;padding:0;line-height:1">🔒</button>
             <button onclick="toggleMGPanel()" id="mgBtn" style="background:#f0f4e8;border:1.5px solid var(--green);color:var(--green-dark);border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">MG</button>
+            <button onclick="abrirMargenReal()" id="margenBtn" style="background:#EFF6FF;border:1.5px solid #3B82F6;color:#1D4ED8;border-radius:20px;padding:2px 8px;font-size:10px;font-weight:700;cursor:pointer;font-family:inherit">📊 MARGEN</button>
             <label style="display:flex;align-items:center;gap:3px;font-size:10px;cursor:pointer">
               <input type="checkbox" id="descEspecialChk" onchange="toggleDescEspecial(this.checked)" style="cursor:pointer">
               <span id="descEspecialLabel" style="color:var(--text2);white-space:nowrap">+3% especial</span>
@@ -1877,6 +1877,9 @@ function nuevaCotizacion(){
   if(mgBtn){mgBtn.style.background='#f0f4e8';mgBtn.style.color='var(--green-dark)';}
   const mgPanel=document.getElementById('mgPanel');
   if(mgPanel)mgPanel.style.display='none';
+  window.margenDesbloqueado=false;
+  const modalMargen=document.getElementById('modalMargenReal');
+  if(modalMargen)modalMargen.style.display='none';
   const dml=document.getElementById('descMaxLabel');
   const dlb=document.getElementById('descLockBtn');
   if(dml){dml.textContent='máx 20%';dml.style.color='var(--text2)';}
@@ -4456,6 +4459,15 @@ function limpiarPedidoFabrica(){
   renderPedidoFabTabla();
 }
 
+// COSTO_AYJ en SharePoint viene por Kg/unidad base, pero el pedido a fábrica se hace
+// por presentación (BULTO 25 KG, GARRAFA 20, etc.) — extrae el contenido numérico de la
+// Presentación para llevar el costo a "costo por unidad de pedido" (por bulto/garrafa).
+// Si la presentación no trae un número parseable, usa 1 (deja el costo tal cual venía).
+function parseContenidoPresentacion(presentacion){
+  const m=String(presentacion||'').match(/(\d+(?:[.,]\d+)?)/);
+  return m?parseFloat(m[1].replace(',','.')):1;
+}
+
 function agregarItemPedidoFab(){
   const nombre=(document.getElementById('pfItemInput').value||'').trim();
   const cant=parseInt(document.getElementById('pfCantInput').value)||0;
@@ -4468,12 +4480,16 @@ function agregarItemPedidoFab(){
   if(existente){
     existente.cantidad+=cant;
   } else {
+    const contenido=parseContenidoPresentacion(m?.presentacion);
     pedidoFab.push({
       titulo:m?.title||nombre,
       marca:m?.marca||'Sin marca / Manual',
       modelo:m?.modelo||'',
-      costoAYJ:m?.costoAYJ||0,
-    cantidad:cant,
+      presentacion:m?.presentacion||'',
+      costoBaseAYJ:m?.costoAYJ||0, // costo por Kg/unidad base, tal cual en SharePoint
+      contenido, // cantidad de Kg (u otra unidad base) que trae cada bulto/garrafa
+      costoUnidadPedido:(m?.costoAYJ||0)*contenido, // costo real por bulto/garrafa — el que se pide
+      cantidad:cant,
     });
   }
   document.getElementById('pfItemInput').value='';
@@ -4497,17 +4513,18 @@ function renderPedidoFabTabla(){
   const filas=pedidoFab.map((p,i)=>`<tr style="border-bottom:1px solid var(--border)">
     <td style="padding:6px 8px">
       <div style="font-weight:600;font-size:12px">${p.titulo}</div>
-      <div style="font-size:10px;color:var(--text2)">${p.marca}${p.modelo?' · '+p.modelo:''}</div>
+      <div style="font-size:10px;color:var(--text2)">${p.marca}${p.modelo?' · '+p.modelo:''}${p.presentacion?' · '+p.presentacion:''}</div>
     </td>
     <td style="padding:6px 8px;text-align:center;width:70px">
       <input type="number" min="1" value="${p.cantidad}" onchange="pedidoFab[${i}].cantidad=Math.max(1,parseInt(this.value)||1);renderPedidoFabTabla()" style="width:55px;padding:3px 4px;border:1px solid var(--border);border-radius:3px;font-size:12px;text-align:center;font-family:inherit">
     </td>
+    <td style="padding:6px 8px;text-align:right;width:90px;font-size:11px;color:var(--text2)">${p.costoUnidadPedido?'USD '+Math.round(p.costoUnidadPedido*100)/100:'—'}</td>
     <td style="padding:6px 8px;text-align:center;width:30px">
       <button onclick="quitarItemPedidoFab(${i})" style="background:none;border:none;cursor:pointer;color:var(--red);font-size:14px"><i class="ti ti-x"></i></button>
     </td>
   </tr>`).join('');
   cont.innerHTML=`<table style="width:100%;border-collapse:collapse;font-size:12px">
-    <thead><tr style="background:var(--bg)"><th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text2)">Ítem</th><th style="padding:6px 8px;font-size:10px;color:var(--text2)">Cant.</th><th></th></tr></thead>
+    <thead><tr style="background:var(--bg)"><th style="padding:6px 8px;text-align:left;font-size:10px;color:var(--text2)">Ítem</th><th style="padding:6px 8px;font-size:10px;color:var(--text2)">Cant.</th><th style="padding:6px 8px;text-align:right;font-size:10px;color:var(--text2)">Costo/unidad</th><th></th></tr></thead>
     <tbody>${filas}</tbody>
   </table>
   <div style="font-size:11px;color:var(--text2);margin-top:6px;text-align:right">${pedidoFab.length} referencia${pedidoFab.length===1?'':'s'} · ${pedidoFab.reduce((s,p)=>s+p.cantidad,0)} unidades en total</div>`;
@@ -4526,17 +4543,18 @@ function generarPDFPedidoFabrica(){
 
   let totalUSD=0;
   const bloques=Object.entries(porMarca).sort(([a],[b])=>a.localeCompare(b,'es')).map(([marca,items])=>{
-    const subtotalUSD=items.reduce((s,p)=>s+p.cantidad*(p.costoAYJ||0),0);
+    const subtotalUSD=items.reduce((s,p)=>s+p.cantidad*(p.costoUnidadPedido||0),0);
     totalUSD+=subtotalUSD;
     const filas=items.map((p,i)=>'<tr>'
       +'<td style="padding:7px 10px;border-bottom:1px solid #ececec;text-align:center;color:#999;font-size:11px">'+(i+1)+'</td>'
       +'<td style="padding:7px 10px;border-bottom:1px solid #ececec;">'
       +'<div style="font-weight:700;font-size:12px;color:#2a2a2a">'+p.titulo+'</div>'
       +(p.modelo?'<div style="font-size:10px;color:#777">'+p.modelo+'</div>':'')
+      +(p.presentacion?'<div style="font-size:10px;color:#80A61B;font-weight:600;margin-top:2px">📦 '+p.presentacion+'</div>':'')
       +'</td>'
       +'<td style="padding:7px 10px;border-bottom:1px solid #ececec;text-align:center;font-weight:700;font-size:13px;color:#575756">'+p.cantidad+'</td>'
-      +(p.costoAYJ?'<td style="padding:7px 10px;border-bottom:1px solid #ececec;text-align:right;font-size:11px;color:#666">'+fUSD(p.costoAYJ)+'</td>'
-        +'<td style="padding:7px 10px;border-bottom:1px solid #ececec;text-align:right;font-weight:700;font-size:12px;color:#575756">'+fUSD(p.cantidad*p.costoAYJ)+'</td>'
+      +(p.costoUnidadPedido?'<td style="padding:7px 10px;border-bottom:1px solid #ececec;text-align:right;font-size:11px;color:#666">'+fUSD(p.costoUnidadPedido)+'<br><span style="font-size:10px;color:#999">'+fCOP(p.costoUnidadPedido)+'</span></td>'
+        +'<td style="padding:7px 10px;border-bottom:1px solid #ececec;text-align:right;font-weight:700;font-size:12px;color:#575756">'+fUSD(p.cantidad*p.costoUnidadPedido)+'<br><span style="font-size:10px;font-weight:500;color:#999">'+fCOP(p.cantidad*p.costoUnidadPedido)+'</span></td>'
         :'<td colspan="2" style="padding:7px 10px;border-bottom:1px solid #ececec;text-align:right;font-size:10px;color:#aaa">Ítem manual — sin costo de referencia</td>')
       +'</tr>').join('');
     return '<div style="margin-top:14px;border:1px solid #ddd;border-radius:8px;overflow:hidden">'
@@ -4546,10 +4564,10 @@ function generarPDFPedidoFabrica(){
       +'<th style="padding:6px 10px;width:26px;font-size:9px;color:#575756">#</th>'
       +'<th style="padding:6px 10px;text-align:left;font-size:9px;color:#575756;text-transform:uppercase">Referencia</th>'
       +'<th style="padding:6px 10px;width:60px;font-size:9px;color:#575756;text-transform:uppercase">Cant.</th>'
-      +'<th style="padding:6px 10px;text-align:right;width:90px;font-size:9px;color:#575756;text-transform:uppercase">Costo Unit.</th>'
-      +'<th style="padding:6px 10px;text-align:right;width:100px;font-size:9px;color:#575756;text-transform:uppercase">Total</th>'
+      +'<th style="padding:6px 10px;text-align:right;width:100px;font-size:9px;color:#575756;text-transform:uppercase">Costo/Unidad</th>'
+      +'<th style="padding:6px 10px;text-align:right;width:110px;font-size:9px;color:#575756;text-transform:uppercase">Total</th>'
       +'</tr></thead><tbody>'+filas+'</tbody>'
-      +(subtotalUSD>0?'<tfoot><tr style="background:#f5f7f0"><td colspan="4" style="padding:7px 10px;text-align:right;font-weight:700;font-size:11px;color:#575756">Subtotal '+marca+'</td><td style="padding:7px 10px;text-align:right;font-weight:800;color:#80A61B">'+fUSD(subtotalUSD)+'</td></tr></tfoot>':'')
+      +(subtotalUSD>0?'<tfoot><tr style="background:#f5f7f0"><td colspan="4" style="padding:7px 10px;text-align:right;font-weight:700;font-size:11px;color:#575756">Subtotal '+marca+'</td><td style="padding:7px 10px;text-align:right;font-weight:800;color:#80A61B">'+fUSD(subtotalUSD)+'<br><span style="font-size:10px;font-weight:600;color:#999">'+fCOP(subtotalUSD)+'</span></td></tr></tfoot>':'')
       +'</table></div>';
   }).join('');
 
@@ -4579,7 +4597,7 @@ function generarPDFPedidoFabrica(){
     +bloques
     +(totalUSD>0?'<div style="margin-top:16px;background:#f5f7f0;border:2px solid #80A61B;border-radius:10px;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">'
       +'<span style="font-weight:700;color:#575756;font-size:13px;">VALOR ESTIMADO DEL PEDIDO (costo AYJ, referencia interna)</span>'
-      +'<span style="text-align:right"><div style="font-size:18px;font-weight:800;color:var(--green-dark, #386414);">'+fUSD(totalUSD)+'</div><div style="font-size:11px;color:#777;">≈ '+fCOP(totalUSD)+'</div></span>'
+      +'<span style="text-align:right"><div style="font-size:18px;font-weight:800;color:#386414;">'+fCOP(totalUSD)+'</div><div style="font-size:11px;color:#777;">'+fUSD(totalUSD)+' · TRM $'+Math.round(trmPF).toLocaleString('es-CO')+'</div></span>'
       +'</div>':'')
     +'</body></html>';
 
@@ -4587,6 +4605,78 @@ function generarPDFPedidoFabrica(){
   w.document.write(html);
   w.document.close();
   showToast('✓ Pedido a Fábrica generado','success');
+}
+
+// ── MARGEN REAL (Venta vs Costo de Fábrica) — botón separado del MG de comisión ──
+window.margenDesbloqueado=false;
+
+function abrirMargenReal(){
+  if(!window.margenDesbloqueado){
+    const clave=prompt('Clave para ver el Margen Real:');
+    if(clave===null) return;
+    if(clave!==CLAVE_MG){showToast('Clave incorrecta','error');return;}
+    window.margenDesbloqueado=true;
+  }
+  renderMargenReal();
+  document.getElementById('modalMargenReal').style.display='flex';
+}
+
+function cerrarMargenReal(){
+  document.getElementById('modalMargenReal').style.display='none';
+}
+
+function renderMargenReal(){
+  const cont=document.getElementById('margenRealBody');
+  if(!cont) return;
+  if(!carrito.length){
+    cont.innerHTML='<div class="loading-list" style="padding:16px;text-align:center;color:var(--text3);font-size:12px">El carrito está vacío</div>';
+    return;
+  }
+  const desc=getDescuento();
+  const subUSD=carrito.reduce((s,i)=>s+(i.tarifa||0),0);
+  const descUSD=subUSD*desc/100;
+  const ventaUSD=subUSD-descUSD; // precio de venta antes de IVA, con descuento
+  const ventaCOP=ventaUSD*trm; // TRM del cotizador (la que se le carga al cliente)
+
+  // Mismo criterio del Pedido a Fábrica: costoAYJ es por Kg/unidad base, se lleva a
+  // costo por unidad vendida (bulto/garrafa) con el contenido de la Presentación.
+  let costoTotalUSD=0, itemsSinCosto=0;
+  carrito.forEach(item=>{
+    if(!item.costoAYJ){ itemsSinCosto++; return; }
+    const contenido=parseContenidoPresentacion(item.presentacion);
+    costoTotalUSD+=(item.costoAYJ*contenido)*(item.cantidad||1);
+  });
+  const trmReal=trmBanRepPura||Math.round((trm||4200)/1.15);
+  const costoCOP=costoTotalUSD*trmReal;
+
+  const margenCOP=ventaCOP-costoCOP;
+  const margenPct=ventaCOP>0?(margenCOP/ventaCOP*100):0;
+
+  const fCOPv=n=>'COP '+Math.round(n||0).toLocaleString('es-CO');
+  const fUSDv=n=>'USD '+Math.round(n||0).toLocaleString('es-CO');
+
+  cont.innerHTML=`
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">
+      <div style="background:#f5f7f0;border:1px solid #d8e0c0;border-radius:var(--radius);padding:12px">
+        <div style="font-size:10px;color:var(--text2);text-transform:uppercase;font-weight:700;margin-bottom:4px">Precio de Venta (sin IVA)</div>
+        <div style="font-size:18px;font-weight:800;color:#575756">${fCOPv(ventaCOP)}</div>
+        <div style="font-size:11px;color:var(--text2);margin-top:2px">${fUSDv(ventaUSD)} · TRM cotizador $${Math.round(trm).toLocaleString('es-CO')}</div>
+      </div>
+      <div style="background:#FEF2F2;border:1px solid #FCA5A5;border-radius:var(--radius);padding:12px">
+        <div style="font-size:10px;color:#991B1B;text-transform:uppercase;font-weight:700;margin-bottom:4px">Costo Fábrica</div>
+        <div style="font-size:18px;font-weight:800;color:#991B1B">${fCOPv(costoCOP)}</div>
+        <div style="font-size:11px;color:#991B1B;margin-top:2px">${fUSDv(costoTotalUSD)} · TRM BanRep $${Math.round(trmReal).toLocaleString('es-CO')}</div>
+      </div>
+    </div>
+    <div style="background:${margenCOP>=0?'#F0FDF4':'#FEF2F2'};border:2px solid ${margenCOP>=0?'#22C55E':'#EF4444'};border-radius:var(--radius-lg);padding:14px;display:flex;justify-content:space-between;align-items:center">
+      <span style="font-weight:700;color:#575756;font-size:13px">MARGEN REAL</span>
+      <span style="text-align:right">
+        <div style="font-size:20px;font-weight:800;color:${margenCOP>=0?'#166534':'#991B1B'}">${margenPct.toFixed(1)}%</div>
+        <div style="font-size:11px;color:var(--text2)">${fCOPv(margenCOP)}</div>
+      </span>
+    </div>
+    ${itemsSinCosto>0?`<div style="font-size:10px;color:var(--text3);margin-top:8px;text-align:center">⚠ ${itemsSinCosto} ítem(s) sin costo de referencia (ítems libres/manuales) — excluidos del costo</div>`:''}
+  `;
 }
 
 function nombreArchivoCot(numOferta, vendedor, cliente='', idSynergy=''){
@@ -4861,6 +4951,21 @@ initMsal();
       <button onclick="generarPDFPedidoFabrica()" class="btn-primary" style="flex:1"><i class="ti ti-file-type-pdf"></i> Generar PDF</button>
       <button onclick="limpiarPedidoFabrica()" class="btn-sec">Limpiar</button>
       <button onclick="cerrarPedidoFabrica()" class="btn-sec">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL MARGEN REAL (Venta vs Costo de Fábrica) -->
+<div id="modalMargenReal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.4);z-index:500;align-items:center;justify-content:center">
+  <div style="background:#fff;border-radius:var(--radius-lg);padding:24px;width:460px;max-width:95vw;box-shadow:0 20px 60px rgba(0,0,0,0.2)">
+    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+      <div style="font-size:14px;font-weight:700;color:var(--gris)">📊 Margen Real — Venta vs Costo de Fábrica</div>
+      <button onclick="cerrarMargenReal()" style="background:none;border:none;cursor:pointer;font-size:20px;color:var(--text3)">×</button>
+    </div>
+    <p style="font-size:11px;color:var(--text2);margin-bottom:14px">🔒 Solo uso interno — compara el precio de venta (antes de IVA, con descuento, TRM del cotizador) contra el costo real de fábrica (mismo criterio del Pedido a Fábrica, TRM BanRep del día).</p>
+    <div id="margenRealBody"></div>
+    <div style="display:flex;gap:8px;margin-top:16px">
+      <button onclick="cerrarMargenReal()" class="btn-sec" style="flex:1">Cerrar</button>
     </div>
   </div>
 </div>
